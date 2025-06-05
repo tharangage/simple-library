@@ -5,9 +5,9 @@ spring:
   profiles.active: dev
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:simple-library}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: jdbc:postgresql://localhost:5432/simple-library
+    username: admin
+    password: secretpassword
   jpa:
     properties.hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
 
