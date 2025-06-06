@@ -9,12 +9,12 @@
 ## How to set up in upper environment
 1. Setup Postgres database
 2. Create user and database
-   3. CREATE DATABASE simple-library; 
-   4. CREATE USER library-admin WITH PASSWORD 'your_db_password'; 
-   5. GRANT ALL PRIVILEGES ON DATABASE simple-library TO library-admin;
+   - CREATE DATABASE simple-library; 
+   - CREATE USER library-admin WITH PASSWORD 'your_db_password'; 
+   - GRANT ALL PRIVILEGES ON DATABASE simple-library TO library-admin;
 3. Configure postgres connections details via environment variables 
-   4. SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/simple-library 
-   5. SPRING_DATASOURCE_USERNAME: library-admin
-   6. SPRING_DATASOURCE_PASSWORD: your_db_password
+   - SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/simple-library 
+   - SPRING_DATASOURCE_USERNAME: library-admin
+   - SPRING_DATASOURCE_PASSWORD: your_db_password
 4. Override active spring profile when run the application
-   5. ex: java -jar -Dspring.profiles.active=prod simple-library.jar
+   - ex: java -jar -Dspring.profiles.active=prod simple-library.jar
