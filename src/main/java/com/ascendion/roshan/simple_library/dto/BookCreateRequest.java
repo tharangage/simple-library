@@ -9,7 +9,7 @@ import lombok.Getter;
 public class BookCreateRequest {
 
     @NotBlank(message = "ISBN cannot be blank")
-    @Size(min = 10, max = 13, message = "ISBN must be 10 or 13 characters")
+    @Size(min = 10, message = "ISBN must be 10 or more characters")
     @Pattern(regexp = "^(?=(?:[^0-9]*[0-9]){10}(?:(?:[^0-9]*[0-9]){3})?$)[\\d-]+$", message = "ISBN must be in correct format")
     private String isbn;
 

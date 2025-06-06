@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,6 +21,7 @@ public class BookController {
     }
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public Book registerBook(@Valid @RequestBody BookCreateRequest bookCreateRequest) {
         return bookService.registerBook(bookCreateRequest);
     }
