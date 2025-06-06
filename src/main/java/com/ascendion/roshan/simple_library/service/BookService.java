@@ -35,7 +35,7 @@ public class BookService {
             final Book bookwithSameIsbn = bookRepository.findFirstByIsbn(bookNew.getIsbn());
             if (!bookwithSameIsbn.getTitle().equals(bookNew.getTitle())
                     || !bookwithSameIsbn.getAuthor().equals(bookNew.getAuthor())) {
-                throw new IllegalArgumentException("Title and Author should be same for same ISBN");
+                throw new IllegalStateException("Title and Author should be same for same ISBN");
             }
         }
 
