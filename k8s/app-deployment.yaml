@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: simple-library-app
-          image: your-dockerhub-username/simple-library-app:latest
+          image: your-dockerhub-username/simple-library:latest
           ports:
             - containerPort: 8080
           env:
