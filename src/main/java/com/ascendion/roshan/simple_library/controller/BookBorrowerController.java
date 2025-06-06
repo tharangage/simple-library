@@ -2,6 +2,7 @@ package com.ascendion.roshan.simple_library.controller;
 
 import com.ascendion.roshan.simple_library.dto.BorrowBookRequest;
 import com.ascendion.roshan.simple_library.service.BookBorrowerService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,7 +17,7 @@ public class BookBorrowerController {
 
     @PostMapping
     public void borrowBook(@PathVariable("borrower-id") String borrowerId,
-                           @RequestBody BorrowBookRequest borrowBookRequest) {
+                           @Valid @RequestBody BorrowBookRequest borrowBookRequest) {
         bookBorrowerService.borrowBook(borrowerId, borrowBookRequest);
     }
 

@@ -3,6 +3,7 @@ package com.ascendion.roshan.simple_library.controller;
 import com.ascendion.roshan.simple_library.entity.Book;
 import com.ascendion.roshan.simple_library.dto.BookCreateRequest;
 import com.ascendion.roshan.simple_library.service.BookService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -19,7 +20,7 @@ public class BookController {
     }
 
     @PostMapping
-    public Book registerBook(@RequestBody BookCreateRequest bookCreateRequest) {
+    public Book registerBook(@Valid @RequestBody BookCreateRequest bookCreateRequest) {
         return bookService.registerBook(bookCreateRequest);
     }
 
