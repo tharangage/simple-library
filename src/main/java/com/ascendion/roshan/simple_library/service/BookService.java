@@ -1,7 +1,7 @@
 package com.ascendion.roshan.simple_library.service;
 
-import com.ascendion.roshan.simple_library.model.Book;
-import com.ascendion.roshan.simple_library.model.dto.BookCreateRequest;
+import com.ascendion.roshan.simple_library.entity.Book;
+import com.ascendion.roshan.simple_library.dto.BookCreateRequest;
 import com.ascendion.roshan.simple_library.repository.BookRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;

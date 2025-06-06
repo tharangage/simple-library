@@ -1,6 +1,6 @@
 package com.ascendion.roshan.simple_library.repository;
 
-import com.ascendion.roshan.simple_library.model.Book;
+import com.ascendion.roshan.simple_library.entity.Book;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

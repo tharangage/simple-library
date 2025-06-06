@@ -1,7 +1,7 @@
 package com.ascendion.roshan.simple_library.controller;
 
-import com.ascendion.roshan.simple_library.model.Borrower;
-import com.ascendion.roshan.simple_library.model.dto.BorrowerCreateRequest;
+import com.ascendion.roshan.simple_library.entity.Borrower;
+import com.ascendion.roshan.simple_library.dto.BorrowerCreateRequest;
 import com.ascendion.roshan.simple_library.service.BorrowerService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

@@ -1,7 +1,7 @@
 package com.ascendion.roshan.simple_library.service;
 
-import com.ascendion.roshan.simple_library.model.Borrower;
-import com.ascendion.roshan.simple_library.model.dto.BorrowerCreateRequest;
+import com.ascendion.roshan.simple_library.entity.Borrower;
+import com.ascendion.roshan.simple_library.dto.BorrowerCreateRequest;
 import com.ascendion.roshan.simple_library.repository.BorrowerRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.dao.DataIntegrityViolationException;

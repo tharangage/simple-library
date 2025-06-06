@@ -1,6 +1,6 @@
 package com.ascendion.roshan.simple_library.controller;
 
-import com.ascendion.roshan.simple_library.model.BorrowBookRequest;
+import com.ascendion.roshan.simple_library.dto.BorrowBookRequest;
 import com.ascendion.roshan.simple_library.service.BookBorrowerService;
 import org.springframework.web.bind.annotation.*;
 

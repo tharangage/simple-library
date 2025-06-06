@@ -1,5 +1,6 @@
-package com.ascendion.roshan.simple_library.model;
+package com.ascendion.roshan.simple_library.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,20 +12,27 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(indexes = @Index(name = "idx_borrower_email", columnList = "email", unique = true))
+@Table(indexes = @Index(name = "idx_book_isbn", columnList = "isbn"))
 @EntityListeners(AuditingEntityListener.class)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Borrower {
+public class Book {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    private String firstname;
-    private String lastname;
-    private String email;
+    private String isbn;
+    private String title;
+    private String author;
+    private boolean isBorrowed = false;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
+    private Borrower borrowedBy;
+
+    private LocalDateTime borrowedDate;
 
     @CreatedDate
     private LocalDateTime createdDate;

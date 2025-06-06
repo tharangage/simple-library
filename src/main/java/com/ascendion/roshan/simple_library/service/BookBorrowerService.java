@@ -1,9 +1,9 @@
 package com.ascendion.roshan.simple_library.service;
 
 import com.ascendion.roshan.simple_library.exception.NotFoundException;
-import com.ascendion.roshan.simple_library.model.Book;
-import com.ascendion.roshan.simple_library.model.BorrowBookRequest;
-import com.ascendion.roshan.simple_library.model.Borrower;
+import com.ascendion.roshan.simple_library.entity.Book;
+import com.ascendion.roshan.simple_library.dto.BorrowBookRequest;
+import com.ascendion.roshan.simple_library.entity.Borrower;
 import com.ascendion.roshan.simple_library.repository.BookRepository;
 import com.ascendion.roshan.simple_library.repository.BorrowerRepository;
 import org.springframework.stereotype.Service;

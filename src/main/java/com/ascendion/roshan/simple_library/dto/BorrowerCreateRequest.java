@@ -1,4 +1,4 @@
-package com.ascendion.roshan.simple_library.model.dto;
+package com.ascendion.roshan.simple_library.dto;
 
 import lombok.Getter;
 
