@@ -1,12 +1,12 @@
-Simple Library Service
+# Simple Library Service
 
-How to set up in local
+## How to set up in local
 1. Setup Java 17 in IDE
 2. Run SimpleLibraryApplication with default (h2) spring profile
 3. Verify APIs using swagger-ui: http://localhost:8080/swagger-ui/index.html
 4. If H2 database is using, refer database console: http://localhost:8080/h2-console
 
-How to set up in upper environment
+## How to set up in upper environment
 1. Setup Postgres database
 2. Create user and database
    3. CREATE DATABASE simple-library; 
