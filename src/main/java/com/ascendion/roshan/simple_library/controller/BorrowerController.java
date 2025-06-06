@@ -1,6 +1,7 @@
 package com.ascendion.roshan.simple_library.controller;
 
 import com.ascendion.roshan.simple_library.model.Borrower;
+import com.ascendion.roshan.simple_library.model.dto.BorrowerCreateRequest;
 import com.ascendion.roshan.simple_library.service.BorrowerService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,11 +19,9 @@ public class BorrowerController {
     }
 
     @PostMapping
-    public Borrower createBorrower(@RequestBody Borrower borrower) {
+    public Borrower registerBorrower(@RequestBody BorrowerCreateRequest borrowerCreateRequest) {
 
-        //TODO
-        borrower.setId("borrower-123");
-        return borrower;
+        return borrowerService.registerBorrower(borrowerCreateRequest);
     }
 
 }

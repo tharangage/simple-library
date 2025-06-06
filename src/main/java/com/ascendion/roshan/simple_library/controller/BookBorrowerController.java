@@ -15,12 +15,14 @@ public class BookBorrowerController {
     }
 
     @PostMapping
-    public void borrowBook(@RequestBody BorrowBookRequest borrowBookRequest) {
-        //TODO
+    public void borrowBook(@PathVariable("borrower-id") String borrowerId,
+                           @RequestBody BorrowBookRequest borrowBookRequest) {
+        bookBorrowerService.borrowBook(borrowerId, borrowBookRequest);
     }
 
     @DeleteMapping("/{book-id}")
-    public void returnBook(@PathVariable("book-id") String bookId) {
-        //TODO
+    public void returnBook(@PathVariable("borrower-id") String borrowerId,
+                           @PathVariable("book-id") String bookId) {
+        bookBorrowerService.returnBook(borrowerId, bookId);
     }
 }

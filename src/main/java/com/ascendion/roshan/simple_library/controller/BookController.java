@@ -1,6 +1,7 @@
 package com.ascendion.roshan.simple_library.controller;
 
 import com.ascendion.roshan.simple_library.model.Book;
+import com.ascendion.roshan.simple_library.model.dto.BookCreateRequest;
 import com.ascendion.roshan.simple_library.service.BookService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,17 +21,13 @@ public class BookController {
     }
 
     @PostMapping
-    public Book registerBook(@RequestBody Book book) {
-
-        //TODO
-        book.setId("book-123");
-        return book;
+    public Book registerBook(@RequestBody BookCreateRequest bookCreateRequest) {
+        return bookService.registerBook(bookCreateRequest);
     }
 
     @GetMapping
     public Page<Book> listBooks(@PageableDefault(size = 20) Pageable pageable) {
-        //TODO
-        return Page.empty();
+        return bookService.listBooks(pageable);
     }
 
 }
