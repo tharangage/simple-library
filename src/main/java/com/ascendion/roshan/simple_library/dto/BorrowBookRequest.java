@@ -2,9 +2,11 @@ package com.ascendion.roshan.simple_library.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
+@Builder
 public class BorrowBookRequest {
 
     @NotBlank(message = "BookId cannot be blank")
