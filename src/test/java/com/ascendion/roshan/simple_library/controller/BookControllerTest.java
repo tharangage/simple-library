@@ -18,11 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class BookControllerTest {
 
     @Autowired
-    private final MockMvc mockMvc;
-
-    public BookControllerTest(MockMvc mockMvc) {
-        this.mockMvc = mockMvc;
-    }
+    private MockMvc mockMvc;
 
     @Test
     public void testGetBooksApi() throws Exception {
@@ -39,8 +35,7 @@ public class BookControllerTest {
                           "isbn": "978-955-675-510-7",
                           "title": "string",
                           "author": "string"
-                        }
-                        """))
+                        }"""))
                 .andExpect(status().isCreated());
     }
 }
