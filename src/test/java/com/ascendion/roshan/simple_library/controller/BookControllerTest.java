@@ -35,7 +35,8 @@ public class BookControllerTest {
                           "isbn": "978-955-675-510-7",
                           "title": "string",
                           "author": "string"
-                        }"""))
+                        }
+                        """))
                 .andExpect(status().isCreated());
     }
 }
