@@ -1,36 +1,33 @@
-version: '3.8'
-
+# Runs only the Spring Boot app. Keycloak and PostgreSQL are already running in WSL
+# (compose project "keycloak", network "keycloak_default"), so the app joins that network.
+#
+# Start:  docker compose up -d --build
+# Swagger UI: http://localhost:8081/swagger-ui/index.html
 services:
-  postgres:
-    image: postgres:15
-    container_name: simple-library-postgres
-    environment:
-      POSTGRES_DB: simple-library
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: secretpassword
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    networks:
-      - library-net
-
   app:
     build: .
+    image: simple-library:latest
     container_name: simple-library-app
-    depends_on:
-      - postgres
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/simple-library
-      SPRING_DATASOURCE_USERNAME: admin
-      SPRING_DATASOURCE_PASSWORD: secretpassword
-    ports:
-      - "8080:8080"
-    networks:
-      - library-net
+      # h2 (default, no DB needed) or prod (PostgreSQL, see SPRING_DATASOURCE_* below)
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
 
-volumes:
-  pgdata:
+      # Used only when SPRING_PROFILES_ACTIVE=prod. Create the DB first, e.g.:
+      #   docker exec keycloak-postgres-1 psql -U keycloak -c 'CREATE DATABASE "simple-library"'
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/simple-library
+      SPRING_DATASOURCE_USERNAME: keycloak
+      SPRING_DATASOURCE_PASSWORD: keycloak
+
+      # Issuer must match the URL browsers use to get tokens (Keycloak is published on host port 8080);
+      # signing keys are fetched over the shared Docker network.
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/realms/${KEYCLOAK_REALM:-library}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/${KEYCLOAK_REALM:-library}/protocol/openid-connect/certs
+    ports:
+      # 8080 on the host is taken by Keycloak
+      - "8081:8080"
+    networks:
+      - keycloak_default
 
 networks:
-  library-net:
+  keycloak_default:
+    external: true
