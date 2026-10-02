@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -22,13 +23,13 @@ public class BookControllerTest {
 
     @Test
     public void testGetBooksApi() throws Exception {
-        mockMvc.perform(get("/apis/v1/books"))
+        mockMvc.perform(get("/apis/v1/books").with(jwt()))
                 .andExpect(status().isOk());
     }
 
     @Test
     public void testRegisterBooksApi() throws Exception {
-        mockMvc.perform(post("/apis/v1/books")
+        mockMvc.perform(post("/apis/v1/books").with(jwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                         {

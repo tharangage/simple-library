@@ -11,5 +11,22 @@ spring:
   jpa:
     properties.hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Must equal the "iss" claim in tokens, i.e. the URL browsers use to reach Keycloak.
+          # Override jwk-set-uri when the app runs in Docker (see docker-compose.yaml).
+          issuer-uri: ${app.keycloak.public-url}/realms/${app.keycloak.realm}
 
+app:
+  keycloak:
+    public-url: http://localhost:8080
+    realm: library
 
+springdoc:
+  swagger-ui:
+    oauth:
+      client-id: library-swagger
+      use-pkce-with-authorization-code-grant: true
+      scopes: openid
