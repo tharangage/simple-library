@@ -43,6 +43,6 @@ public class BookService {
     }
 
     public Page<Book> listBooks(final Pageable pageable) {
-        return new PageImpl<>(bookRepository.findAll());
+        return bookRepository.findAll(pageable);
     }
 }
