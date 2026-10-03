@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 public class BookService {
 
     private final BookRepository bookRepository;
-
     private final ModelMapper modelMapper;
 
     public BookService(final BookRepository bookRepository,
@@ -25,24 +24,31 @@ public class BookService {
     }
 
     public Book registerBook(final BookCreateRequest bookCreateRequest) {
-
-        // convert to entity model
         final Book bookNew = modelMapper.map(bookCreateRequest, Book.class);
-
-        final long countBySameIsbn = bookRepository.countByIsbn(bookNew.getIsbn());
-        if (countBySameIsbn > 0) {
-            log.info("There are {} books with same ISBN {}", countBySameIsbn, bookNew.getIsbn());
-            final Book bookwithSameIsbn = bookRepository.findFirstByIsbn(bookNew.getIsbn());
-            if (!bookwithSameIsbn.getTitle().equals(bookNew.getTitle())
-                    || !bookwithSameIsbn.getAuthor().equals(bookNew.getAuthor())) {
-                throw new IllegalStateException("Title and Author should be same for same ISBN");
-            }
-        }
-
+        validateIsbnConsistency(bookNew);
         return bookRepository.save(bookNew);
     }
 
     public Page<Book> listBooks(final Pageable pageable) {
-        return new PageImpl<>(bookRepository.findAll());
+        return bookRepository.findAll(pageable);
+    }
+
+    private void validateIsbnConsistency(final Book bookNew) {
+        final long countBySameIsbn = bookRepository.countByIsbn(bookNew.getIsbn());
+
+        if (countBySameIsbn == 0) {
+            return;
+        }
+
+        log.warn("There are {} books with same ISBN {}", countBySameIsbn, bookNew.getIsbn());
+
+        final Book existingBook = bookRepository.findFirstByIsbn(bookNew.getIsbn());
+
+        // ISBN is the edition identity. Multiple copies are allowed, but all copies
+        // for the same ISBN must still describe the same title and author.
+        if (!existingBook.getTitle().equals(bookNew.getTitle())
+                || !existingBook.getAuthor().equals(bookNew.getAuthor())) {
+            throw new IllegalStateException("Title and Author should be same for same ISBN");
+        }
     }
 }
