@@ -4,6 +4,7 @@ import com.ascendion.roshan.simple_library.entity.Book;
 import com.ascendion.roshan.simple_library.dto.BookCreateRequest;
 import com.ascendion.roshan.simple_library.service.BookService;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -27,7 +28,7 @@ public class BookController {
     }
 
     @GetMapping
-    public Page<Book> listBooks(@PageableDefault(size = 20) Pageable pageable) {
+    public Page<Book> listBooks(@ParameterObject @PageableDefault(size = 20) Pageable pageable) {
         return bookService.listBooks(pageable);
     }
 

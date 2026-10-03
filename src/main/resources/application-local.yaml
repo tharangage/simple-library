@@ -1,0 +1,11 @@
+server:
+  port: 8081
+
+spring:
+  jpa:
+    show-sql: true
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/simple-library
+    username: keycloak
+    password: keycloak
