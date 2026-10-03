@@ -18,11 +18,6 @@ services:
       SPRING_DATASOURCE_USERNAME: keycloak
       SPRING_DATASOURCE_PASSWORD: keycloak
 
-      # Issuer must match the URL browsers use to get tokens (Keycloak is published on host port 8080);
-      # signing keys are fetched over the shared Docker network.
-      APP_KEYCLOAK_REALM: ${KEYCLOAK_REALM:-library}
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/realms/${KEYCLOAK_REALM:-library}
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/${KEYCLOAK_REALM:-library}/protocol/openid-connect/certs
     ports:
       # 8080 on the host is taken by Keycloak
       - "8081:8080"

@@ -2,13 +2,10 @@ spring:
   application:
     name: simple-library
 
-  profiles.active: h2
+  profiles.active: local
 
-  datasource:
-    url: jdbc:postgresql://localhost:5432/simple-library
-    username: admin
-    password: secretpassword
   jpa:
+    hibernate.ddl-auto: update
     properties.hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
 
   security:
@@ -18,6 +15,7 @@ spring:
           # Must equal the "iss" claim in tokens, i.e. the URL browsers use to reach Keycloak.
           # Override jwk-set-uri when the app runs in Docker (see docker-compose.yaml).
           issuer-uri: ${app.keycloak.public-url}/realms/${app.keycloak.realm}
+          jwk-set-uri: ${app.keycloak.public-url}/realms/${app.keycloak.realm}/protocol/openid-connect/certs
 
 app:
   keycloak:
