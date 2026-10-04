@@ -65,9 +65,10 @@ The body for 404/409/500 is the plain message string.
 ## Profiles & running
 | Profile | DB | Notes |
 |---|---|---|
-| `h2` (default in `application.yaml`) | in-memory `jdbc:h2:mem:simple-library` | H2 console at `/h2-console` (sa / password) |
+| `h2` | in-memory `jdbc:h2:mem:simple-library` | H2 console at `/h2-console` (sa / password) |
 | `dev` | PostgreSQL from `SPRING_DATASOURCE_*` / `application.yaml` | `ddl-auto: update`, SQL logging. Default in `docker-compose.yaml` |
-| `prod` | PostgreSQL from env vars | `application-prod.yaml` is currently empty |
+| `local` (default in `application.yaml`) | PostgreSQL on `localhost:5432` (`application-local.yaml`) | Runs on port 8081 |
+| `prod` | PostgreSQL from env vars | no `application-prod.yaml` exists |
 
 Commands (run in WSL Ubuntu from the repo root):
 ```bash
@@ -111,8 +112,19 @@ Docker in WSL (compose project `keycloak`, network `keycloak_default`).
   Spring/security/business-rule review. It is read-only; fix findings yourself or via the main assistant.
 
 ## Known issues (don't "fix" silently — mention them)
-- `BookService.listBooks` ignores the `Pageable` (`new PageImpl<>(findAll())`) — paging/size params have no effect.
+- Default profile in `application.yaml` is **`local`** (PostgreSQL on localhost:5432, port 8081), not `h2`.
+  This conflicts with the "H2 is the default" hard rule — decide which one is right. Tests use `@ActiveProfiles("h2")`.
 - `POST /apis/v1/borrowers` returns 200, not 201 like books.
-- `Book.isBorrowed` + Lombok `@Data` produces getter `isBorrowed()` / setter `setBorrowed()`; JSON field is `borrowed`.
-- `application-prod.yaml` is empty; `docker-compose.yaml` comment mentions `h2` but defaults to `dev`.
+- `Book.isBorrowed` + Lombok produces getter `isBorrowed()` / setter `setBorrowed()`; JSON field is `borrowed`.
+- `GET /apis/v1/books` serializes `PageImpl` directly (Spring Data logs a "stability of the JSON structure" warning).
+  Switching to `PagedModel` / `VIA_DTO` changes the JSON shape, so coordinate with the React app first.
+- Registering two books with the same new ISBN concurrently can bypass the title/author check (no DB constraint).
+- JWTs are not checked for audience/`azp`: any token from realm `library` is accepted.
+- `docker-compose.yaml` comment mentions `h2` but defaults to `dev`; `dev` has no datasource URL of its own.
 - `Jenkinsfile` builds with `-DskipTests`.
+
+## Design notes
+- Controllers return response DTOs (`BookResponse`, `BorrowerResponse` records), never JPA entities.
+- Borrow/return are `@Transactional` and load the book with `BookRepository.findByIdForUpdate`
+  (pessimistic write lock), so concurrent borrows of one copy can't both succeed. Lock timeouts → 409.
+- `?sort=<unknown>` → 400 (`PropertyReferenceException`). CORS origins: `app.cors.allowed-origins`.

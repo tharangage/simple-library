@@ -38,7 +38,7 @@
 		<quality.spotbugs.failThreshold>High</quality.spotbugs.failThreshold>
 		<quality.pmd.failurePriority>2</quality.pmd.failurePriority>
 		<quality.cpd.minimumTokens>100</quality.cpd.minimumTokens>
-		<quality.coverage.minimum>0.00</quality.coverage.minimum>
+		<quality.coverage.minimum>0.60</quality.coverage.minimum>
 	</properties>
 	<dependencies>
 		<dependency>

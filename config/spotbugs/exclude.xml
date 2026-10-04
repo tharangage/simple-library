@@ -25,4 +25,11 @@
         <Class name="com.ascendion.roshan.simple_library.config.SecurityConfig"/>
         <Bug pattern="SPRING_CSRF_PROTECTION_DISABLED"/>
     </Match>
+
+    <!-- ISBN pattern: the repeated groups use disjoint character classes ([^0-9]* then [0-9]),
+         so there is no catastrophic backtracking, and @Size caps the input at 17 characters. -->
+    <Match>
+        <Class name="com.ascendion.roshan.simple_library.dto.BookCreateRequest"/>
+        <Bug pattern="REDOS"/>
+    </Match>
 </FindBugsFilter>
