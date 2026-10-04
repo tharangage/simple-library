@@ -6,6 +6,15 @@
 3. Verify APIs using swagger-ui: http://localhost:8080/swagger-ui/index.html
 4. If H2 database is using, refer database console: http://localhost:8080/h2-console
 
+## Code quality
+Run the same free checks as the pull-request pipeline:
+```bash
+./mvnw -Pquality verify   # tests, JaCoCo coverage, SpotBugs + FindSecBugs, PMD, CPD
+```
+Coverage report: `target/site/jacoco/index.html`. On GitHub, every pull request runs the
+"Code quality" and "CodeQL" workflows; findings show up as annotations on the PR and under
+**Security → Code scanning**.
+
 ## How to set up in upper environment
 1. Setup Postgres database
 2. Create user and database

@@ -6,7 +6,9 @@ spring:
 
   jpa:
     hibernate.ddl-auto: update
-    properties.hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+    # Dialect is detected from the JDBC connection (H2 or PostgreSQL), so it is not set here.
+    # Responses are DTOs, so no lazy loading happens while rendering JSON.
+    open-in-view: false
 
   security:
     oauth2:
@@ -21,6 +23,9 @@ app:
   keycloak:
     public-url: http://localhost:8080
     realm: library
+  cors:
+    # Origins of the React front end (comma-separated). Override with APP_CORS_ALLOWED_ORIGINS.
+    allowed-origins: http://localhost:3000,http://localhost:5173
 
 springdoc:
   swagger-ui:

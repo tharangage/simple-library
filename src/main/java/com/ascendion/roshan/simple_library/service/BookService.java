@@ -1,17 +1,16 @@
 package com.ascendion.roshan.simple_library.service;
 
-import com.ascendion.roshan.simple_library.entity.Book;
 import com.ascendion.roshan.simple_library.dto.BookCreateRequest;
+import com.ascendion.roshan.simple_library.entity.Book;
 import com.ascendion.roshan.simple_library.repository.BookRepository;
-import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
+
 @Service
-@Slf4j
 public class BookService {
 
     private final BookRepository bookRepository;
@@ -33,22 +32,16 @@ public class BookService {
         return bookRepository.findAll(pageable);
     }
 
+    /**
+     * ISBN is the edition identity. Multiple copies are allowed, but all copies
+     * for the same ISBN must still describe the same title and author.
+     */
     private void validateIsbnConsistency(final Book bookNew) {
-        final long countBySameIsbn = bookRepository.countByIsbn(bookNew.getIsbn());
-
-        if (countBySameIsbn == 0) {
-            return;
-        }
-
-        log.warn("There are {} books with same ISBN {}", countBySameIsbn, bookNew.getIsbn());
-
-        final Book existingBook = bookRepository.findFirstByIsbn(bookNew.getIsbn());
-
-        // ISBN is the edition identity. Multiple copies are allowed, but all copies
-        // for the same ISBN must still describe the same title and author.
-        if (!existingBook.getTitle().equals(bookNew.getTitle())
-                || !existingBook.getAuthor().equals(bookNew.getAuthor())) {
-            throw new IllegalStateException("Title and Author should be same for same ISBN");
-        }
+        bookRepository.findFirstByIsbn(bookNew.getIsbn())
+                .filter(existing -> !Objects.equals(existing.getTitle(), bookNew.getTitle())
+                        || !Objects.equals(existing.getAuthor(), bookNew.getAuthor()))
+                .ifPresent(existing -> {
+                    throw new IllegalStateException("Title and Author should be same for same ISBN");
+                });
     }
 }

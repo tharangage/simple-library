@@ -1,0 +1,48 @@
+# GitHub CodeQL: deep semantic security + quality analysis. Free for public repositories.
+# Results appear under Security -> Code scanning and as annotations on pull requests.
+name: CodeQL
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  schedule:
+    - cron: '23 3 * * 1'   # weekly, catches newly published queries
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: CodeQL (Java)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: java-kotlin
+          build-mode: manual
+          queries: security-and-quality
+
+      - name: Compile
+        run: |
+          chmod +x mvnw
+          ./mvnw -B -ntp -DskipTests compile
+
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:java-kotlin

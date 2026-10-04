@@ -1,7 +1,7 @@
 package com.ascendion.roshan.simple_library.controller;
 
-import com.ascendion.roshan.simple_library.entity.Borrower;
 import com.ascendion.roshan.simple_library.dto.BorrowerCreateRequest;
+import com.ascendion.roshan.simple_library.dto.BorrowerResponse;
 import com.ascendion.roshan.simple_library.service.BorrowerService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,9 +20,8 @@ public class BorrowerController {
     }
 
     @PostMapping
-    public Borrower registerBorrower(@Valid @RequestBody BorrowerCreateRequest borrowerCreateRequest) {
-
-        return borrowerService.registerBorrower(borrowerCreateRequest);
+    public BorrowerResponse registerBorrower(@Valid @RequestBody final BorrowerCreateRequest borrowerCreateRequest) {
+        return BorrowerResponse.from(borrowerService.registerBorrower(borrowerCreateRequest));
     }
 
 }
