@@ -6,6 +6,6 @@ spring:
     show-sql: true
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/simple-library
-    username: keycloak
-    password: keycloak
+    url: jdbc:postgresql://localhost:5432/simple_library
+    username: simple_library
+    password: simple_library

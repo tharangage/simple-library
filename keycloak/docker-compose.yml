@@ -1,18 +1,25 @@
-version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
       POSTGRES_PASSWORD: keycloak
+      # Only used by the init script on a brand-new volume
+      SIMPLE_LIBRARY_DB_PASSWORD: ${SIMPLE_LIBRARY_DB_PASSWORD:-simple_library}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 5s
+      retries: 10
 
   keycloak:
-    image: quay.io/keycloak/keycloak:latest
+    image: quay.io/keycloak/keycloak:26.8.0
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
@@ -20,14 +27,11 @@ services:
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: keycloak
       KC_DB_PASSWORD: keycloak
-#      KC_HOSTNAME: localhost
-#      KC_HOSTNAME_STRICT: false
-#      KC_HTTP_ENABLED: true
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
- #       condition: service_healthy
+      postgres:
+        condition: service_healthy
     command: start-dev
 
 volumes:

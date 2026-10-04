@@ -13,10 +13,14 @@ services:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
 
       # Used only when SPRING_PROFILES_ACTIVE=prod. Create the DB first, e.g.:
-      #   docker exec keycloak-postgres-1 psql -U keycloak -c 'CREATE DATABASE "simple-library"'
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/simple-library
-      SPRING_DATASOURCE_USERNAME: keycloak
-      SPRING_DATASOURCE_PASSWORD: keycloak
+      #   docker exec -i keycloak-postgres-1 psql -U keycloak -d postgres < keycloak/migrate-simple-library.sql
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/simple_library
+      SPRING_DATASOURCE_USERNAME: simple_library
+      SPRING_DATASOURCE_PASSWORD: ${SIMPLE_LIBRARY_DB_PASSWORD:-simple_library}
+
+      # Inside the container "localhost" is the app itself, so fetch the signing keys from the
+      # Keycloak container. The issuer-uri (token "iss" claim) stays http://localhost:8080/...
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/library/protocol/openid-connect/certs
 
     ports:
       # 8080 on the host is taken by Keycloak
