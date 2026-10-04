@@ -1,0 +1,127 @@
+# Free code-quality checks on every pull request (and on master for a baseline).
+#   - Build + tests + JaCoCo coverage
+#   - SpotBugs + FindSecBugs, PMD, CPD  (./mvnw -Pquality verify, same as locally)
+#   - Findings uploaded to GitHub code scanning -> inline annotations on the PR
+#   - Dependency review: blocks PRs that add dependencies with known high-severity CVEs
+#   - SonarQube Cloud (optional, free for public repos): runs only when SONAR_TOKEN is set
+name: Code quality
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: code-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Build, test & static analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write   # upload SARIF to code scanning
+      actions: read
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0       # SonarQube Cloud needs full history for blame / new-code detection
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Make Maven wrapper executable
+        run: chmod +x mvnw
+
+      - name: Build, test and run quality checks
+        run: ./mvnw -B -ntp -Pquality verify
+
+      - name: Collect SARIF files
+        if: always()
+        run: |
+          mkdir -p target/sarif
+          [ -f target/spotbugsSarif.json ] && cp target/spotbugsSarif.json target/sarif/spotbugs.sarif || true
+          for f in target/pmd.sarif*; do [ -f "$f" ] && cp "$f" target/sarif/pmd.sarif; done
+          ls -l target/sarif
+
+      - name: Upload SpotBugs results to code scanning
+        if: always() && hashFiles('target/sarif/spotbugs.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: target/sarif/spotbugs.sarif
+          category: spotbugs
+
+      - name: Upload PMD results to code scanning
+        if: always() && hashFiles('target/sarif/pmd.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: target/sarif/pmd.sarif
+          category: pmd
+
+      - name: Coverage summary
+        if: always() && hashFiles('target/site/jacoco/jacoco.csv') != ''
+        run: |
+          awk -F, 'NR>1 { lm+=$8; lc+=$9; bm+=$6; bc+=$7 }
+               END {
+                 printf "### Test coverage (JaCoCo)\n\n| Metric | Covered | Total | %% |\n|---|---|---|---|\n";
+                 printf "| Lines | %d | %d | %.1f%% |\n", lc, lc+lm, (lc+lm)?100*lc/(lc+lm):0;
+                 printf "| Branches | %d | %d | %.1f%% |\n", bc, bc+bm, (bc+bm)?100*bc/(bc+bm):0;
+               }' target/site/jacoco/jacoco.csv >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Full HTML report: download the **quality-reports** artifact." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: quality-reports
+          retention-days: 14
+          if-no-files-found: ignore
+          path: |
+            target/site/jacoco/
+            target/spotbugsXml.xml
+            target/pmd.xml
+            target/cpd.xml
+            target/surefire-reports/
+
+      # Optional: SonarQube Cloud (free for public repositories).
+      # Setup: sign in at https://sonarcloud.io with GitHub, import this repo, turn OFF
+      # "Automatic Analysis", then add repo secret SONAR_TOKEN and repo variables
+      # SONAR_ORGANIZATION and SONAR_PROJECT_KEY. Skipped until SONAR_TOKEN exists.
+      - name: SonarQube Cloud analysis
+        if: env.SONAR_TOKEN != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        run: >
+          ./mvnw -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:5.8.0.7211:sonar
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+          -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }}
+          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+          -Dsonar.java.spotbugs.reportPaths=target/spotbugsXml.xml
+          -Dsonar.java.pmd.reportPaths=target/pmd.xml
+          -Dsonar.qualitygate.wait=true
+
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure

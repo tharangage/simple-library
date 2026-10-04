@@ -99,6 +99,17 @@ Docker in WSL (compose project `keycloak`, network `keycloak_default`).
   build them via JSON in MockMvc tests, or `ReflectionTestUtils.setField` in unit tests.
 - Assertions: AssertJ preferred for new tests; test names `method_condition_expectedResult`.
 
+## Code quality (all free)
+- Local: `./mvnw -Pquality verify` → tests + JaCoCo coverage + SpotBugs/FindSecBugs + PMD + CPD.
+  Reports: `target/site/jacoco/index.html`, `target/spotbugsXml.xml`, `target/pmd.xml`, `target/cpd.xml`.
+- Config: `config/pmd/ruleset.xml`, `config/spotbugs/exclude.xml` (every exclusion needs a reason),
+  `lombok.config` (marks generated code so coverage/SpotBugs skip it). Gates are `quality.*` properties in `pom.xml`.
+- CI (`.github/workflows/`): `code-quality.yml` runs the same profile on every PR, uploads findings to
+  GitHub code scanning (inline PR annotations), plus dependency review and optional SonarQube Cloud
+  (only when the `SONAR_TOKEN` secret exists). `codeql.yml` runs CodeQL `security-and-quality`.
+- Before opening a PR, use the **code-quality-reviewer** agent: it runs the tools and adds a
+  Spring/security/business-rule review. It is read-only; fix findings yourself or via the main assistant.
+
 ## Known issues (don't "fix" silently — mention them)
 - `BookService.listBooks` ignores the `Pageable` (`new PageImpl<>(findAll())`) — paging/size params have no effect.
 - `POST /apis/v1/borrowers` returns 200, not 201 like books.

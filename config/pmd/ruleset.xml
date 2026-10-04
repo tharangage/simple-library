@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PMD 7 rules for simple-library.
+  Focus: real bugs, security, performance and maintainability. Pure style rules
+  (naming, comments, braces) are left out on purpose - IntelliJ already covers them.
+  To silence one finding in code: @SuppressWarnings("PMD.RuleName") with a short reason.
+-->
+<ruleset name="simple-library"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+    <description>Quality rules for the simple-library Spring Boot API</description>
+
+    <rule ref="category/java/errorprone.xml">
+        <!-- Exceptions are never serialized in this app -->
+        <exclude name="MissingSerialVersionUID"/>
+        <!-- Literals such as "Book not found" are clearer inline than as constants -->
+        <exclude name="AvoidDuplicateLiterals"/>
+    </rule>
+
+    <rule ref="category/java/bestpractices.xml">
+        <!-- SLF4J placeholders already avoid the cost this rule guards against -->
+        <exclude name="GuardLogStatement"/>
+    </rule>
+
+    <rule ref="category/java/security.xml"/>
+    <rule ref="category/java/multithreading.xml">
+        <!-- Spring beans are singletons managed by the container; this rule is noise here -->
+        <exclude name="UseConcurrentHashMap"/>
+    </rule>
+    <rule ref="category/java/performance.xml"/>
+
+    <rule ref="category/java/design.xml">
+        <exclude name="LawOfDemeter"/>
+        <exclude name="LoosePackageCoupling"/>
+        <!-- JPA entities and DTOs are data classes by design -->
+        <exclude name="DataClass"/>
+        <!-- @SpringBootApplication class only has main() -->
+        <exclude name="UseUtilityClass"/>
+        <!-- Spring's ResponseEntityExceptionHandler / filter chains need these -->
+        <exclude name="SignatureDeclareThrowsException"/>
+        <exclude name="AvoidCatchingGenericException"/>
+    </rule>
+</ruleset>
