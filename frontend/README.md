@@ -18,8 +18,14 @@ npm run dev          # http://localhost:5173
 | `npm run dev` | Dev server with hot reload on port 5173 (fails if the port is taken, on purpose) |
 | `npm test` | Unit/component tests (Vitest + React Testing Library), once |
 | `npm run test:watch` | Tests re-run on every save |
-| `npm run lint` | oxlint (fast linter that came with the Vite template) |
+| `npm run test:coverage` | Tests + coverage report in `coverage/index.html`; fails below the thresholds in `vite.config.js` |
+| `npm run lint` | oxlint: likely bugs, React hook rules, accessibility, import cycles (rules in `.oxlintrc.json`) |
 | `npm run build` / `npm run preview` | Production build into `dist/` / serve that build on :4173 |
+
+### Continuous integration
+Every pull request that touches `frontend/` runs `.github/workflows/frontend.yml`: `npm ci`, lint, tests with the
+coverage gate, a production build and `npm audit`. Run the same commands locally before pushing to avoid surprises.
+CodeQL also scans the JavaScript for security problems, and Dependabot opens weekly update PRs.
 
 Settings live in `.env` (API URL, Keycloak URL, realm, client id), created from `.env.example`. `.env` is not committed.
 

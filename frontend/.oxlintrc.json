@@ -1,8 +1,25 @@
 {
+  // oxlint config (JSON with comments). Run: npm run lint
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "oxc"],
+  "plugins": ["react", "jsx-a11y", "import", "vitest", "oxc", "unicorn"],
+  "categories": {
+    // correctness = code that is almost certainly wrong; suspicious = probably wrong.
+    "correctness": "error",
+    "suspicious": "warn"
+  },
   "rules": {
     "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
+    // Missing useEffect/useMemo dependencies cause stale-data bugs that are hard to spot.
+    "react/exhaustive-deps": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }],
+    // Since React 17's JSX transform, files no longer need `import React`.
+    "react/react-in-jsx-scope": "off",
+    // CSS and test-setup imports are imported only for their side effects, which is intended.
+    "import/no-unassigned-import": ["warn", { "allow": ["**/*.css", "@testing-library/jest-dom/vitest"] }],
+    "import/no-cycle": "error",
+    // Wants <output> instead of role="status"; <output> is meant for calculation results,
+    // so role="status" is the better fit for loading messages. Not in jsx-a11y's recommended set.
+    "jsx-a11y/prefer-tag-over-role": "off"
+  },
+  "ignorePatterns": ["dist", "coverage"]
 }

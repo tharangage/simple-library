@@ -20,5 +20,14 @@ export default defineConfig({
       VITE_KEYCLOAK_REALM: 'library',
       VITE_KEYCLOAK_CLIENT_ID: 'library-web',
     },
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{js,jsx}'],
+      // Wiring only (no logic of its own), or test helpers.
+      exclude: ['src/main.jsx', 'src/app/router.jsx', 'src/auth/oidcConfig.js', 'src/test/**', 'src/**/*.test.{js,jsx}'],
+      reporter: ['text-summary', 'html', 'json-summary', 'lcov'],
+      // `npm run test:coverage` fails if coverage drops below these. Raise them as tests grow; never lower.
+      thresholds: { lines: 80, statements: 80, functions: 80, branches: 75 },
+    },
   },
 })
