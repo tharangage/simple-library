@@ -1,0 +1,117 @@
+/*
+ * One small global stylesheet (decision D-11 for now: plain CSS, no UI library).
+ * Colours are CSS variables ("design tokens"), so dark mode only swaps the variables.
+ */
+:root {
+  --bg: #f7f7f5;
+  --surface: #ffffff;
+  --text: #1f2328;
+  --muted: #5f6670;
+  --border: #d9dcd6;
+  --accent: #2f5d50;
+  --accent-text: #ffffff;
+  --error-bg: #fdecea;
+  --error-text: #8a1c12;
+  --available-bg: #e3f4e8;
+  --available-text: #1d5c2e;
+  --borrowed-bg: #eceef0;
+  --borrowed-text: #4a5058;
+  --hold-bg: #fff4d6;
+  --hold-text: #6b4d00;
+  --mine-bg: #e2ecfb;
+  --mine-text: #1c4588;
+  --radius: 6px;
+
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16181a;
+    --surface: #1e2124;
+    --text: #e6e8ea;
+    --muted: #a0a7b0;
+    --border: #353a40;
+    --accent: #7cc2ac;
+    --accent-text: #0e1a16;
+    --error-bg: #3a1714;
+    --error-text: #ffb4a9;
+    --available-bg: #183a24;
+    --available-text: #9fe0b2;
+    --borrowed-bg: #2b2f34;
+    --borrowed-text: #c4c9cf;
+    --hold-bg: #3a3014;
+    --hold-text: #f3d27a;
+    --mine-bg: #1a2c4a;
+    --mine-text: #a9c6f5;
+  }
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+h1 { font-size: 1.6rem; margin: 0 0 0.25rem; }
+a { color: var(--accent); }
+
+button {
+  font: inherit;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.button--primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.link-button { border: none; background: none; padding: 0; color: var(--accent); text-decoration: underline; }
+
+.muted { color: var(--muted); margin: 0; }
+.mono { font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 0.9em; }
+
+/* Layout */
+.topbar {
+  display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+  padding: 0.75rem 1rem; background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.brand { font-weight: 700; color: var(--text); text-decoration: none; }
+.topbar nav a { color: var(--muted); text-decoration: none; padding: 0.25rem 0; }
+.topbar nav a.active { color: var(--text); border-bottom: 2px solid var(--accent); }
+.topbar__user { margin-left: auto; display: flex; align-items: center; gap: 0.75rem; }
+.content { max-width: 1000px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+.page-header { margin-bottom: 1rem; }
+.welcome { max-width: 36rem; margin: 3rem auto; text-align: center; }
+
+.message { padding: 0.75rem 1rem; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); }
+.message--error { background: var(--error-bg); color: var(--error-text); border-color: transparent; }
+
+/* Books table */
+.book-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.book-table th, .book-table td { text-align: left; padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--border); }
+.book-table th { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+.book-table tbody tr:last-child td { border-bottom: none; }
+.book-table[aria-busy='true'] { opacity: 0.6; }
+.book-table__title { font-weight: 600; }
+.sort-button { border: none; background: none; padding: 0; color: inherit; font-weight: inherit; }
+
+.badge { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+.badge--available { background: var(--available-bg); color: var(--available-text); }
+.badge--borrowed { background: var(--borrowed-bg); color: var(--borrowed-text); }
+.badge--on_hold { background: var(--hold-bg); color: var(--hold-text); }
+.badge--borrowed_by_me, .badge--reserved_by_me, .badge--ready_for_me { background: var(--mine-bg); color: var(--mine-text); }
+
+.pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1rem; }
+
+/* Narrow screens: each table row becomes a small card, labels come from data-label. */
+@media (max-width: 640px) {
+  .book-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .book-table, .book-table tbody, .book-table tr, .book-table td { display: block; }
+  .book-table { border: none; background: none; }
+  .book-table tr { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 0.75rem; padding: 0.5rem 0; }
+  .book-table td { border: none; padding: 0.2rem 0.8rem; }
+  .book-table td::before { content: attr(data-label) ': '; color: var(--muted); font-size: 0.8rem; }
+}
