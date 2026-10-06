@@ -1,0 +1,89 @@
+# Quality checks for the React web app (frontend/) on every pull request and on master.
+#   - Lint (oxlint: correctness, React hooks, accessibility, imports) -> annotations on the PR
+#   - Unit/component tests with a coverage gate (fails below the thresholds in vite.config.js)
+#   - Production build (catches broken imports and config the dev server tolerates)
+#   - npm audit for known high/critical vulnerabilities
+# Same commands as locally:  npm run lint  /  npm run test:coverage  /  npm run build
+# New vulnerable npm packages in a PR are also blocked by "Dependency review" (code-quality.yml),
+# and CodeQL scans the JavaScript for security issues (codeql.yml).
+name: Frontend quality
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend.yml'
+  push:
+    branches: [master]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: frontend
+
+jobs:
+  check:
+    name: Lint, test & build (frontend)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # `npm ci` installs exactly what package-lock.json lists, and fails if it is out of date.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npx oxlint --deny-warnings --format=github
+
+      - name: Test with coverage
+        run: npm run test:coverage
+
+      - name: Coverage summary
+        if: always() && hashFiles('frontend/coverage/coverage-summary.json') != ''
+        run: |
+          node -e '
+            const t = require("./coverage/coverage-summary.json").total;
+            const row = (name, m) => `| ${name} | ${m.covered} | ${m.total} | ${m.pct}% |`;
+            console.log(["### Frontend test coverage (Vitest)", "", "| Metric | Covered | Total | % |", "|---|---|---|---|",
+              row("Lines", t.lines), row("Branches", t.branches), row("Functions", t.functions), "",
+              "Full HTML report: download the **frontend-coverage** artifact."].join("\n"));
+          ' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-coverage
+          retention-days: 14
+          if-no-files-found: ignore
+          path: frontend/coverage/
+
+      - name: Build
+        run: npm run build
+        env:
+          # CI has no .env file; any values will do for a build check.
+          VITE_API_BASE_URL: http://localhost:8081
+          VITE_KEYCLOAK_URL: http://localhost:8080
+          VITE_KEYCLOAK_REALM: library
+          VITE_KEYCLOAK_CLIENT_ID: library-web
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high

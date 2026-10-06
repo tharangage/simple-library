@@ -1,0 +1,21 @@
+# Dependabot opens pull requests when dependencies have updates or security fixes.
+# Each PR runs the normal checks, so a broken update is caught before merging.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    groups:
+      # One PR for all minor/patch updates instead of one per package.
+      frontend-minor-and-patch:
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      github-actions:
+        patterns: ['*']
