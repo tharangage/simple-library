@@ -25,6 +25,9 @@ jobs:
     name: Build, test & static analysis
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
     permissions:
       contents: read
       security-events: write   # upload SARIF to code scanning
@@ -57,21 +60,21 @@ jobs:
           ls -l target/sarif
 
       - name: Upload SpotBugs results to code scanning
-        if: always() && hashFiles('target/sarif/spotbugs.sarif') != ''
+        if: always() && hashFiles('backend/target/sarif/spotbugs.sarif') != ''
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: target/sarif/spotbugs.sarif
+          sarif_file: backend/target/sarif/spotbugs.sarif
           category: spotbugs
 
       - name: Upload PMD results to code scanning
-        if: always() && hashFiles('target/sarif/pmd.sarif') != ''
+        if: always() && hashFiles('backend/target/sarif/pmd.sarif') != ''
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: target/sarif/pmd.sarif
+          sarif_file: backend/target/sarif/pmd.sarif
           category: pmd
 
       - name: Coverage summary
-        if: always() && hashFiles('target/site/jacoco/jacoco.csv') != ''
+        if: always() && hashFiles('backend/target/site/jacoco/jacoco.csv') != ''
         run: |
           awk -F, 'NR>1 { lm+=$8; lc+=$9; bm+=$6; bc+=$7 }
                END {
@@ -90,11 +93,11 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
           path: |
-            target/site/jacoco/
-            target/spotbugsXml.xml
-            target/pmd.xml
-            target/cpd.xml
-            target/surefire-reports/
+            backend/target/site/jacoco/
+            backend/target/spotbugsXml.xml
+            backend/target/pmd.xml
+            backend/target/cpd.xml
+            backend/target/surefire-reports/
 
       # Optional: SonarQube Cloud (free for public repositories).
       # Setup: sign in at https://sonarcloud.io with GitHub, import this repo, turn OFF

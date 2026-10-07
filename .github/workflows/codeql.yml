@@ -53,6 +53,7 @@ jobs:
       - name: Compile
         if: matrix.language == 'java-kotlin'
         run: |
+          cd backend
           chmod +x mvnw
           ./mvnw -B -ntp -DskipTests compile
 

@@ -5,7 +5,7 @@
 # Swagger UI: http://localhost:8081/swagger-ui/index.html
 services:
   app:
-    build: ./backend
+    build: .
     image: simple-library:latest
     container_name: simple-library-app
     environment:
@@ -27,13 +27,6 @@ services:
       - "8081:8080"
     networks:
       - keycloak_default
-
-  webapp:
-    build: ./frontend
-    ports:
-      - "5173:80"
-    depends_on:
-      - app
 
 networks:
   keycloak_default:

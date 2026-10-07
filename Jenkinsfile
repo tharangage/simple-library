@@ -14,14 +14,16 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh './mvnw clean package -DskipTests'
+                dir('backend') {
+                    sh './mvnw clean package -DskipTests'
+                }
             }
         }
 
         stage('Docker Build') {
             steps {
                 script {
-                    docker.build(DOCKER_IMAGE)
+                    docker.build(DOCKER_IMAGE, 'backend')
                 }
             }
         }
