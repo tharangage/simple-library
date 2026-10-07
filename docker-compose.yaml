@@ -28,6 +28,13 @@ services:
     networks:
       - keycloak_default
 
+  webapp:
+    build: ./frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - app
+
 networks:
   keycloak_default:
     external: true
