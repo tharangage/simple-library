@@ -21,6 +21,7 @@ Swagger UI both log users in through Keycloak and call this API with bearer toke
 - Test: spring-boot-starter-test (JUnit 5, Mockito, AssertJ, MockMvc), spring-security-test
 
 ## Project layout
+All backend code lives in `backend/` (pom.xml, mvnw, src, config/, lombok.config, Dockerfile). Run Maven from there.
 Base package: `com.ascendion.roshan.simple_library`
 ```
 config/      AppConfig (ModelMapper), OpenApiConfig (Swagger OAuth2), SecurityConfig
@@ -31,7 +32,7 @@ exception/   NotFoundException, CustomResponseEntityExceptionHandler
 repository/  BookRepository, BorrowerRepository (JpaRepository<_, String>)
 service/     BookService, BorrowerService, BookBorrowerService
 ```
-Other: `Dockerfile`, `docker-compose.yaml` (app only), `keycloak/docker-compose.yml`
+Other: `backend/Dockerfile`, `docker-compose.yaml` (app only), `keycloak/docker-compose.yml`
 (Keycloak + Postgres), `k8s/`, `Jenkinsfile`, `archive/` (old files — ignore).
 
 ## API
@@ -70,13 +71,13 @@ The body for 404/409/500 is the plain message string.
 | `local` (default in `application.yaml`) | PostgreSQL on `localhost:5432` (`application-local.yaml`) | Runs on port 8081 |
 | `prod` | PostgreSQL from env vars | no `application-prod.yaml` exists |
 
-Commands (run in WSL Ubuntu from the repo root):
+Commands (run in WSL Ubuntu from `backend/`):
 ```bash
 ./mvnw clean verify                         # build + all tests
 ./mvnw test -Dtest=BookServiceTest          # one test class
 ./mvnw test -Dtest='BookServiceTest#registerBook*'
 ./mvnw spring-boot:run -Dspring-boot.run.arguments=--server.port=8081
-docker compose up -d --build                # app in Docker → http://localhost:8081/swagger-ui/index.html
+(cd .. && docker compose up -d --build)             # app in Docker → http://localhost:8081/swagger-ui/index.html
 ```
 Environment: Windows 11 + WSL Ubuntu. Keycloak (host port **8080**) and PostgreSQL run in
 Docker in WSL (compose project `keycloak`, network `keycloak_default`).
@@ -84,7 +85,7 @@ Docker in WSL (compose project `keycloak`, network `keycloak_default`).
 - If `./mvnw` fails with `/bin/sh^M`, the file has CRLF endings: `sed -i 's/\r$//' mvnw`.
 
 ## Testing conventions
-- Tests mirror the main package under `src/test/java`, named `<ClassName>Test`.
+- Tests mirror the main package under `backend/src/test/java`, named `<ClassName>Test`.
 - Service tests: `@ExtendWith(MockitoExtension.class)`, `@Mock` repositories / `ModelMapper`, `@InjectMocks` (see `BookBorrowerServiceTest`).
 - Controller tests: prefer `@WebMvcTest(XController.class)` + `MockMvc` + `@MockitoBean` services
   (Boot 3.5: use `@MockitoBean`, not the deprecated `@MockBean`).
@@ -102,9 +103,9 @@ Docker in WSL (compose project `keycloak`, network `keycloak_default`).
 
 ## Code quality (all free)
 - Local: `./mvnw -Pquality verify` → tests + JaCoCo coverage + SpotBugs/FindSecBugs + PMD + CPD.
-  Reports: `target/site/jacoco/index.html`, `target/spotbugsXml.xml`, `target/pmd.xml`, `target/cpd.xml`.
-- Config: `config/pmd/ruleset.xml`, `config/spotbugs/exclude.xml` (every exclusion needs a reason),
-  `lombok.config` (marks generated code so coverage/SpotBugs skip it). Gates are `quality.*` properties in `pom.xml`.
+  Reports: `backend/target/site/jacoco/index.html`, `backend/target/spotbugsXml.xml`, `backend/target/pmd.xml`, `backend/target/cpd.xml`.
+- Config: `backend/config/pmd/ruleset.xml`, `backend/config/spotbugs/exclude.xml` (every exclusion needs a reason),
+  `backend/lombok.config` (marks generated code so coverage/SpotBugs skip it). Gates are `quality.*` properties in `pom.xml`.
 - CI (`.github/workflows/`): `code-quality.yml` runs the same profile on every PR, uploads findings to
   GitHub code scanning (inline PR annotations), plus dependency review and optional SonarQube Cloud
   (only when the `SONAR_TOKEN` secret exists). `codeql.yml` runs CodeQL `security-and-quality`.

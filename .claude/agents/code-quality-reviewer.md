@@ -18,10 +18,10 @@ decides what to fix (or asks the main assistant / `backend-test-writer` to do it
   `git status --short` for uncommitted work. Ignore `archive/`, `target/`, `.idea/`.
 - Ignore pure line-ending changes (`git diff --ignore-cr-at-eol`). This repo is edited on
   Windows + WSL, so CRLF-only diffs are common and are not "changes".
-- If nothing changed, review the whole of `src/main/java`.
+- If nothing changed, review the whole of `backend/src/main/java`.
 
 ## 2. Run the tools (same checks as the GitHub "Code quality" workflow)
-From the repo root (WSL Ubuntu):
+From `backend/` (WSL Ubuntu):
 ```bash
 [ -x mvnw ] || chmod +x mvnw
 grep -q $'\r' mvnw && sed -i 's/\r$//' mvnw     # fixes "/bin/sh^M"
@@ -36,16 +36,16 @@ grep -q $'\r' mvnw && sed -i 's/\r$//' mvnw     # fixes "/bin/sh^M"
 Then read the reports (they exist even when the gate failed):
 | Tool | File | What to extract |
 |---|---|---|
-| SpotBugs + FindSecBugs | `target/spotbugsXml.xml` | each `<BugInstance>`: `type`, `priority` (1=high), `category`, class + `<SourceLine start=..>` |
-| PMD | `target/pmd.xml` | each `<violation>`: `rule`, `priority`, file, `beginline`, message |
-| CPD | `target/cpd.xml` | each `<duplication>`: lines/tokens and both file locations |
-| JaCoCo | `target/site/jacoco/jacoco.csv` | line + branch coverage per class; flag changed classes below 70% lines |
+| SpotBugs + FindSecBugs | `backend/target/spotbugsXml.xml` | each `<BugInstance>`: `type`, `priority` (1=high), `category`, class + `<SourceLine start=..>` |
+| PMD | `backend/target/pmd.xml` | each `<violation>`: `rule`, `priority`, file, `beginline`, message |
+| CPD | `backend/target/cpd.xml` | each `<duplication>`: lines/tokens and both file locations |
+| JaCoCo | `backend/target/site/jacoco/jacoco.csv` | line + branch coverage per class; flag changed classes below 70% lines |
 
 Use `grep`/`python3` to parse - don't paste whole XML files into the conversation.
 Prioritise findings in **changed files**; mention pre-existing ones only as a short count.
 
 ## 3. Manual review - what the tools can't see
-Read every changed file under `src/main` (and the tests that cover it). Check:
+Read every changed file under `backend/src/main` (and the tests that cover it). Check:
 
 **Correctness & business rules**
 - ISBN rule (same ISBN -> same title and author, else 409), unique borrower email,
@@ -103,4 +103,4 @@ Severity guide: **Blocker** = bug, security hole, broken business rule, failing 
 hard-rule violation; **Major** = likely bug or maintainability problem worth fixing in this PR;
 **Minor** = improvement; **Info** = FYI. Never pad the list - if it's clean, say so.
 If you suspect a false positive, say why and show the suppression to use
-(`@SuppressWarnings("PMD.Rule")`, or an entry with a reason in `config/spotbugs/exclude.xml`).
+(`@SuppressWarnings("PMD.Rule")`, or an entry with a reason in `backend/config/spotbugs/exclude.xml`).

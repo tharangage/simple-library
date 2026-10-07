@@ -9,9 +9,10 @@
 ## Code quality
 Run the same free checks as the pull-request pipeline:
 ```bash
+cd backend
 ./mvnw -Pquality verify   # tests, JaCoCo coverage, SpotBugs + FindSecBugs, PMD, CPD
 ```
-Coverage report: `target/site/jacoco/index.html`. On GitHub, every pull request runs the
+Coverage report: `backend/target/site/jacoco/index.html`. On GitHub, every pull request runs the
 "Code quality" and "CodeQL" workflows; findings show up as annotations on the PR and under
 **Security → Code scanning**.
 
