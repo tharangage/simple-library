@@ -1,7 +1,7 @@
 # Simple Library – web app
 
 React + **JavaScript** (no TypeScript) front end for the Simple Library API.
-Implements story **US-03.1 Books page**, plus the minimum foundation it needs (parts of US-07.1–07.4).
+Implements stories **US-03.1 Books page** and **US-02.3 Registration page** (`/register`), plus the minimum foundation it needs (parts of US-07.1–07.4).
 
 ## Run it (WSL Ubuntu)
 Prerequisites: Node **22.22+** (`node -v`; with nvm: `nvm install` reads `.nvmrc`), Keycloak on :8080, the backend on :8081.
@@ -53,8 +53,9 @@ src/
   auth/                  Keycloak login: oidcConfig, RequireAuth guard, /auth/callback page
   api/                   The only code that calls the backend: client.js (fetch + token + errors), books.js
   app/                   Router, Layout (header), Home and Not-found pages
-  components/            Reusable UI pieces (Pagination)
+  components/            Reusable UI pieces (Pagination, TextField)
   features/books/        Everything for the Books page: page, status rules, data hook, badge, tests
+  features/registration/ Sign-up form (/register), validation rules that mirror the backend, tests
   index.css              Global styles; colours are CSS variables, dark mode swaps them
 ```
 Rule of thumb: **pages never call `fetch` directly**. Page → hook (`useBooks`) → api function (`fetchBooks`) → `apiGet`.

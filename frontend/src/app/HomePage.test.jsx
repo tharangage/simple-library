@@ -29,6 +29,12 @@ describe('HomePage', () => {
     expect(mockAuth.signinRedirect).toHaveBeenCalled()
   })
 
+  it('offers a visitor without an account the registration page', () => {
+    mockAuth = createMockAuth()
+    renderHome()
+    expect(screen.getByRole('link', { name: 'Create an account' })).toHaveAttribute('href', '/register')
+  })
+
   it('sends a logged-in user straight to the books', () => {
     mockAuth = createMockAuth({ isAuthenticated: true, user: loggedInUser })
     renderHome()

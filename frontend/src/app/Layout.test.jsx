@@ -37,6 +37,7 @@ describe('Layout', () => {
     renderLayout()
 
     expect(screen.queryByRole('link', { name: 'Books' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Register' })).toHaveAttribute('href', '/register')
     await userEvent.click(screen.getByRole('button', { name: 'Log in' }))
     expect(mockAuth.signinRedirect).toHaveBeenCalled()
   })

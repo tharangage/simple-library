@@ -28,9 +28,12 @@ export function Layout() {
             </>
           ) : (
             !auth.isLoading && (
-              <button type="button" className="button--primary" onClick={() => auth.signinRedirect()}>
-                Log in
-              </button>
+              <>
+                <Link to="/register">Register</Link>
+                <button type="button" className="button--primary" onClick={() => auth.signinRedirect()}>
+                  Log in
+                </button>
+              </>
             )
           )}
         </div>

@@ -2,6 +2,9 @@
 
 - **Figma:** [Simple Library – Self-Registration](https://www.figma.com/design/napnNlVd3hy0LtHqzMtQtA) (file key `napnNlVd3hy0LtHqzMtQtA`)
 - **Status:** Draft, desktop only (1440×900). No mobile layout yet.
+- **Implemented in code as E02 (US-02.1–02.3) with two differences from this design:** the *Phone (optional)* field is
+  a **required Mobile number** (E.164, e.g. `+14155550100`) and the *Address* field was dropped, as the epic says.
+  The Figma frames still show the earlier version and have not been updated.
 - **Font:** Inter. Colours are plain fills (no Figma variables or design system yet).
 
 ## Frames
