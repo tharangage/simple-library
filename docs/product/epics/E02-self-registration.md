@@ -6,7 +6,7 @@
 **Requirement refs:** Frontend #1
 **Decisions:** D-01 (stories below assume option **a**), assumptions A-01, A-08, A-12
 
-### US-02.1 Public registration API (BE · L) · [SCRUM-21](https://tharangage.atlassian.net/browse/SCRUM-21) – *implemented*
+### US-02.1 Public registration API (BE · L) · [SCRUM-21](https://tharangage.atlassian.net/browse/SCRUM-21) – *done* (merged in PR #11)
 As a visitor, I want to register with my details, so that I can log in and borrow books.
 - `POST /apis/v1/registrations` takes `{firstName, lastName, email, mobile, password}` and needs no token.
 - Validation → 400 with field errors: all fields required. Email format. Mobile matches E.164 `^\+[1-9]\d{7,14}$`. Password ≥ 8 characters.
@@ -16,12 +16,12 @@ As a visitor, I want to register with my details, so that I can log in and borro
 - Returns 201 with `Location: /apis/v1/me` and no password in the response. Password and mobile are never logged.
 - Basic abuse protection: request size limit, plus a note/ticket for rate limiting at the ingress.
 
-### US-02.2 Mobile number on Borrower (BE · S) · [SCRUM-22](https://tharangage.atlassian.net/browse/SCRUM-22) – *implemented*
+### US-02.2 Mobile number on Borrower (BE · S) · [SCRUM-22](https://tharangage.atlassian.net/browse/SCRUM-22) – *done* (merged in PR #11)
 As the library, I want to store each borrower's mobile number, so that we can contact them later.
 - `Borrower.mobile` column (nullable for existing rows). Included in `BorrowerResponse` / `GET /me`, and never shown to other users.
 - H2 and PostgreSQL schema update via `ddl-auto: update` for now (migrations: see US-10.3).
 
-### US-02.3 Registration page (FE · M) · [SCRUM-23](https://tharangage.atlassian.net/browse/SCRUM-23) – *implemented*
+### US-02.3 Registration page (FE · M) · [SCRUM-23](https://tharangage.atlassian.net/browse/SCRUM-23) – *done* (merged in PR #11)
 As a visitor, I want a sign-up form, so that I can create an account without contacting the library.
 - `/register` route, reachable from the landing page and the "not logged in" state.
 - Fields: first name, last name, email, mobile (with `+country code` hint), password, confirm password.
@@ -36,6 +36,8 @@ As an admin who creates a `user` in the Keycloak console, I want that person to 
 - Idempotent under concurrent first calls (unique `keycloakUserId`; on conflict, re-read the row).
 
 ## Implementation notes
+Status: US-02.1–02.3 merged to `master` in [PR #11](https://github.com/tharangage/simple-library/pull/11) and tested against a real Keycloak. US-02.4 is still open.
+
 Keycloak setup: [`docs/setup/keycloak-registration.md`](../../setup/keycloak-registration.md).
 - `Borrower` also got a unique, nullable `keycloakUserId` (US-01.x will make it required for new rows).
 - A duplicate email that slips past the pre-check (race) is answered **409**, not 500; the Keycloak user is still deleted again.

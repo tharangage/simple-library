@@ -18,8 +18,9 @@ Then:
    add **`manage-users`** and **`view-users`** and nothing else.
 2. *Credentials* tab → copy the **Client secret**.
 3. Give it to the backend as the environment variable **`KEYCLOAK_ADMIN_CLIENT_SECRET`**
-   (`export KEYCLOAK_ADMIN_CLIENT_SECRET=…` before `./mvnw spring-boot:run`; for Docker Compose put it in `.env`
-   next to `docker-compose.yaml`). Never commit it. Without it the endpoint answers 500 and the log says why.
+   (`export KEYCLOAK_ADMIN_CLIENT_SECRET=…` before `./mvnw spring-boot:run`; for Docker Compose put
+   `KEYCLOAK_ADMIN_CLIENT_SECRET=…` in an untracked `.env` next to `docker-compose.yaml`, which is git-ignored).
+   **Never put the value in a compose file or any tracked file.** Without it the endpoint answers 500 and the log says why.
 
 ## 2. Realm role `user` as a default role
 The backend does not assign a role itself (that would need more permissions). New users get the realm's
@@ -33,6 +34,16 @@ The mobile number is sent as the user attribute `mobile`. Keycloak 24+ drops unk
 ## 4. Backend URL when running in Docker
 Inside the app container Keycloak is not `localhost`. `docker-compose.yaml` already sets
 `APP_KEYCLOAK_ADMIN_BASE_URL=http://keycloak:8080`. Outside Docker the default `http://localhost:8080` is right.
+
+## Troubleshooting
+| Symptom | Cause |
+|---|---|
+| Token call returns `unauthorized_client: Client not enabled to retrieve service account` | Turn on **Service accounts roles** for `library-backend` (step 1) |
+| `invalid_client` | Wrong or stale client secret |
+| Registration returns 500 | Read the backend log: the message names the cause (missing secret, 401/403 from Keycloak, connection refused) |
+| 403 when creating the user | The service account lacks `manage-users` / `view-users` |
+
+On Windows PowerShell `curl` is an alias for `Invoke-WebRequest`; use `curl.exe` (with a here-string body) or run the example in WSL.
 
 ## Try it
 ```bash
