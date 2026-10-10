@@ -1,5 +1,5 @@
 import { useAuth } from 'react-oidc-context'
-import { Navigate } from 'react-router'
+import { Link, Navigate } from 'react-router'
 
 export function HomePage() {
   const auth = useAuth()
@@ -19,6 +19,9 @@ export function HomePage() {
       <button type="button" className="button--primary" onClick={() => auth.signinRedirect()}>
         Log in
       </button>
+      <p className="muted">
+        New here? <Link to="/register">Create an account</Link>
+      </p>
     </section>
   )
 }

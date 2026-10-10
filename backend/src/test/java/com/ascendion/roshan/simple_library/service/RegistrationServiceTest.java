@@ -40,7 +40,7 @@ class RegistrationServiceTest {
     @Test
     void register_newEmail_createsKeycloakUserThenBorrowerLinkedToIt() {
         when(borrowerRepository.existsByEmailIgnoreCase("ann@example.com")).thenReturn(false);
-        when(keycloak.createUser("ann@example.com", "Ann", "Lee", "+14155550100", "s3cret-pass"))
+        when(keycloak.createUser(new KeycloakAdminClient.NewUser("ann@example.com", "Ann", "Lee", "+14155550100", "s3cret-pass")))
                 .thenReturn("kc-123");
         when(borrowerRepository.saveAndFlush(any(Borrower.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -67,7 +67,7 @@ class RegistrationServiceTest {
 
     @Test
     void register_emailAlreadyInKeycloak_throws409AndSavesNothing() {
-        when(keycloak.createUser(any(), any(), any(), any(), any())).thenThrow(new EmailAlreadyRegisteredException());
+        when(keycloak.createUser(any())).thenThrow(new EmailAlreadyRegisteredException());
 
         assertThatThrownBy(() -> service.register(REQUEST)).isInstanceOf(EmailAlreadyRegisteredException.class);
 
@@ -76,7 +76,7 @@ class RegistrationServiceTest {
 
     @Test
     void register_saveFails_deletesKeycloakUserAndRethrows() {
-        when(keycloak.createUser(any(), any(), any(), any(), any())).thenReturn("kc-123");
+        when(keycloak.createUser(any())).thenReturn("kc-123");
         when(borrowerRepository.saveAndFlush(any())).thenThrow(new IllegalArgumentException("db down"));
 
         assertThatThrownBy(() -> service.register(REQUEST)).isInstanceOf(IllegalArgumentException.class);
@@ -86,7 +86,7 @@ class RegistrationServiceTest {
 
     @Test
     void register_duplicateEmailRaceOnInsert_deletesKeycloakUserAndThrows409() {
-        when(keycloak.createUser(any(), any(), any(), any(), any())).thenReturn("kc-123");
+        when(keycloak.createUser(any())).thenReturn("kc-123");
         when(borrowerRepository.saveAndFlush(any())).thenThrow(new DataIntegrityViolationException("dup"));
 
         assertThatThrownBy(() -> service.register(REQUEST)).isInstanceOf(EmailAlreadyRegisteredException.class);
@@ -96,7 +96,7 @@ class RegistrationServiceTest {
 
     @Test
     void register_saveFailsAndCompensationFails_stillReportsTheOriginalError() {
-        when(keycloak.createUser(any(), any(), any(), any(), any())).thenReturn("kc-123");
+        when(keycloak.createUser(any())).thenReturn("kc-123");
         when(borrowerRepository.saveAndFlush(any())).thenThrow(new IllegalArgumentException("db down"));
         doThrow(new KeycloakAdminException("delete failed")).when(keycloak).deleteUser("kc-123");
 

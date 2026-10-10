@@ -4,7 +4,6 @@ import com.ascendion.roshan.simple_library.config.KeycloakAdminProperties;
 import com.ascendion.roshan.simple_library.exception.EmailAlreadyRegisteredException;
 import com.ascendion.roshan.simple_library.exception.KeycloakAdminException;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -14,6 +13,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -26,6 +26,18 @@ import java.util.Map;
  */
 @Component
 public class KeycloakAdminClient {
+
+    private static final ParameterizedTypeReference<Map<String, Object>> JSON_OBJECT =
+            new ParameterizedTypeReference<>() { };
+
+    /** What Keycloak needs to create an account. */
+    public record NewUser(String email, String firstName, String lastName, String mobile, String password) {
+        /** Never print the password or mobile number. */
+        @Override
+        public String toString() {
+            return "NewUser[redacted]";
+        }
+    }
 
     private final RestClient restClient;
     private final KeycloakAdminProperties properties;
@@ -42,18 +54,17 @@ public class KeycloakAdminClient {
      * @throws EmailAlreadyRegisteredException if Keycloak already has a user with this email
      * @throws KeycloakAdminException          for any other failure
      */
-    public String createUser(final String email, final String firstName, final String lastName,
-                             final String mobile, final String password) {
+    public String createUser(final NewUser newUser) {
         final String token = fetchServiceToken();
         final Map<String, Object> user = Map.of(
-                "username", email,
-                "email", email,
-                "firstName", firstName,
-                "lastName", lastName,
+                "username", newUser.email(),
+                "email", newUser.email(),
+                "firstName", newUser.firstName(),
+                "lastName", newUser.lastName(),
                 "enabled", true,
                 "emailVerified", false,
-                "attributes", Map.of("mobile", List.of(mobile)),
-                "credentials", List.of(Map.of("type", "password", "value", password, "temporary", false)));
+                "attributes", Map.of("mobile", List.of(newUser.mobile())),
+                "credentials", List.of(Map.of("type", "password", "value", newUser.password(), "temporary", false)));
         try {
             final ResponseEntity<Void> response = restClient.post()
                     .uri("/admin/realms/{realm}/users", properties.realm())
@@ -62,7 +73,7 @@ public class KeycloakAdminClient {
                     .body(user)
                     .retrieve()
                     .toBodilessEntity();
-            return idFromLocation(response.getHeaders());
+            return idFromLocation(response.getHeaders().getLocation());
         } catch (HttpClientErrorException.Conflict ex) {
             throw new EmailAlreadyRegisteredException(ex);
         } catch (RestClientException ex) {
@@ -99,7 +110,7 @@ public class KeycloakAdminClient {
                     .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                     .body(form)
                     .retrieve()
-                    .body(new ParameterizedTypeReference<>() { });
+                    .body(JSON_OBJECT);
             final Object token = body == null ? null : body.get("access_token");
             if (token == null) {
                 throw new KeycloakAdminException("Keycloak returned no access token for the service account");
@@ -110,11 +121,11 @@ public class KeycloakAdminClient {
         }
     }
 
-    private static String idFromLocation(final HttpHeaders headers) {
-        final String location = headers.getFirst(HttpHeaders.LOCATION);
-        if (location == null || location.isBlank()) {
+    private static String idFromLocation(final URI location) {
+        if (location == null) {
             throw new KeycloakAdminException("Keycloak did not return the new user's location");
         }
-        return location.substring(location.lastIndexOf('/') + 1);
+        final String path = location.getPath();
+        return path.substring(path.lastIndexOf('/') + 1);
     }
 }

@@ -67,7 +67,7 @@ class KeycloakAdminClientTest {
                 .andRespond(withStatus(HttpStatus.CREATED)
                         .location(java.net.URI.create(USERS_URL + "/kc-123")));
 
-        final String id = client.createUser("ann@example.com", "Ann", "Lee", "+14155550100", "s3cret-pass");
+        final String id = client.createUser(new KeycloakAdminClient.NewUser("ann@example.com", "Ann", "Lee", "+14155550100", "s3cret-pass"));
 
         assertThat(id).isEqualTo("kc-123");
         server.verify();
@@ -78,7 +78,7 @@ class KeycloakAdminClientTest {
         expectToken();
         server.expect(requestTo(USERS_URL)).andRespond(withStatus(HttpStatus.CONFLICT));
 
-        assertThatThrownBy(() -> client.createUser("ann@example.com", "Ann", "Lee", "+14155550100", "s3cret-pass"))
+        assertThatThrownBy(() -> client.createUser(new KeycloakAdminClient.NewUser("ann@example.com", "Ann", "Lee", "+14155550100", "s3cret-pass")))
                 .isInstanceOf(EmailAlreadyRegisteredException.class);
     }
 
@@ -87,7 +87,7 @@ class KeycloakAdminClientTest {
         expectToken();
         server.expect(requestTo(USERS_URL)).andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
 
-        assertThatThrownBy(() -> client.createUser("ann@example.com", "Ann", "Lee", "+14155550100", "s3cret-pass"))
+        assertThatThrownBy(() -> client.createUser(new KeycloakAdminClient.NewUser("ann@example.com", "Ann", "Lee", "+14155550100", "s3cret-pass")))
                 .isInstanceOf(KeycloakAdminException.class)
                 .hasMessageNotContaining("s3cret-pass")
                 .hasMessageNotContaining("ann@example.com");
@@ -98,7 +98,7 @@ class KeycloakAdminClientTest {
         expectToken();
         server.expect(requestTo(USERS_URL)).andRespond(withStatus(HttpStatus.CREATED));
 
-        assertThatThrownBy(() -> client.createUser("a@b.co", "A", "B", "+14155550100", "s3cret-pass"))
+        assertThatThrownBy(() -> client.createUser(new KeycloakAdminClient.NewUser("a@b.co", "A", "B", "+14155550100", "s3cret-pass")))
                 .isInstanceOf(KeycloakAdminException.class);
     }
 
@@ -106,7 +106,7 @@ class KeycloakAdminClientTest {
     void createUser_tokenRequestRejected_throwsKeycloakAdminException() {
         server.expect(requestTo(TOKEN_URL)).andRespond(withStatus(HttpStatus.UNAUTHORIZED));
 
-        assertThatThrownBy(() -> client.createUser("a@b.co", "A", "B", "+14155550100", "s3cret-pass"))
+        assertThatThrownBy(() -> client.createUser(new KeycloakAdminClient.NewUser("a@b.co", "A", "B", "+14155550100", "s3cret-pass")))
                 .isInstanceOf(KeycloakAdminException.class);
     }
 
@@ -114,7 +114,7 @@ class KeycloakAdminClientTest {
     void createUser_tokenResponseWithoutAccessToken_throwsKeycloakAdminException() {
         server.expect(requestTo(TOKEN_URL)).andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
 
-        assertThatThrownBy(() -> client.createUser("a@b.co", "A", "B", "+14155550100", "s3cret-pass"))
+        assertThatThrownBy(() -> client.createUser(new KeycloakAdminClient.NewUser("a@b.co", "A", "B", "+14155550100", "s3cret-pass")))
                 .isInstanceOf(KeycloakAdminException.class);
     }
 
@@ -125,7 +125,7 @@ class KeycloakAdminClientTest {
         final KeycloakAdminClient unconfigured = new KeycloakAdminClient(builder,
                 new KeycloakAdminProperties(BASE, "library", "library-backend", ""));
 
-        assertThatThrownBy(() -> unconfigured.createUser("a@b.co", "A", "B", "+14155550100", "s3cret-pass"))
+        assertThatThrownBy(() -> unconfigured.createUser(new KeycloakAdminClient.NewUser("a@b.co", "A", "B", "+14155550100", "s3cret-pass")))
                 .isInstanceOf(KeycloakAdminException.class)
                 .hasMessageContaining("KEYCLOAK_ADMIN_CLIENT_SECRET");
         none.verify();

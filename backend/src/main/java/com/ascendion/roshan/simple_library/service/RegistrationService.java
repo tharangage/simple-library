@@ -33,8 +33,8 @@ public class RegistrationService {
             throw new EmailAlreadyRegisteredException();
         }
 
-        final String keycloakUserId = keycloak.createUser(
-                email, request.firstName().trim(), request.lastName().trim(), request.mobile(), request.password());
+        final String keycloakUserId = keycloak.createUser(new KeycloakAdminClient.NewUser(
+                email, request.firstName().trim(), request.lastName().trim(), request.mobile(), request.password()));
 
         final Borrower borrower = new Borrower();
         borrower.setFirstname(request.firstName().trim());
@@ -42,15 +42,18 @@ public class RegistrationService {
         borrower.setEmail(email);
         borrower.setMobile(request.mobile());
         borrower.setKeycloakUserId(keycloakUserId);
+        boolean saved = false;
         try {
-            return borrowerRepository.saveAndFlush(borrower);
+            final Borrower result = borrowerRepository.saveAndFlush(borrower);
+            saved = true;
+            return result;
         } catch (DataIntegrityViolationException ex) {
             // Someone registered the same email between our check and the insert.
-            compensate(keycloakUserId);
             throw new EmailAlreadyRegisteredException(ex);
-        } catch (RuntimeException ex) {
-            compensate(keycloakUserId);
-            throw ex;   // answered as 500
+        } finally {
+            if (!saved) {
+                compensate(keycloakUserId);   // any failure (409 race or 500): undo the Keycloak user
+            }
         }
     }
 
@@ -59,7 +62,8 @@ public class RegistrationService {
             keycloak.deleteUser(keycloakUserId);
         } catch (RuntimeException deleteFailure) {
             // Needs manual cleanup. Log the Keycloak id only, never the email, mobile or password.
-            log.error("Could not delete Keycloak user {} after a failed registration", keycloakUserId, deleteFailure);
+            log.error("Could not delete Keycloak user {} after a failed registration",
+                    keycloakUserId.replaceAll("[^A-Za-z0-9-]", "_"), deleteFailure);
         }
     }
 }
