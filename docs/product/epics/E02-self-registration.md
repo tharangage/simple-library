@@ -1,10 +1,12 @@
 # E02 – User self-registration
 
+**Jira:** [SCRUM-6](https://tharangage.atlassian.net/browse/SCRUM-6)
+
 **Goal:** A visitor creates their own account (role `user`) from the web app with a name, a valid-format email and mobile number, and a password.
 **Requirement refs:** Frontend #1
 **Decisions:** D-01 (stories below assume option **a**), assumptions A-01, A-08, A-12
 
-### US-02.1 Public registration API (BE · L) – *implemented*
+### US-02.1 Public registration API (BE · L) · [SCRUM-21](https://tharangage.atlassian.net/browse/SCRUM-21) – *implemented*
 As a visitor, I want to register with my details, so that I can log in and borrow books.
 - `POST /apis/v1/registrations` takes `{firstName, lastName, email, mobile, password}` and needs no token.
 - Validation → 400 with field errors: all fields required. Email format. Mobile matches E.164 `^\+[1-9]\d{7,14}$`. Password ≥ 8 characters.
@@ -14,12 +16,12 @@ As a visitor, I want to register with my details, so that I can log in and borro
 - Returns 201 with `Location: /apis/v1/me` and no password in the response. Password and mobile are never logged.
 - Basic abuse protection: request size limit, plus a note/ticket for rate limiting at the ingress.
 
-### US-02.2 Mobile number on Borrower (BE · S) – *implemented*
+### US-02.2 Mobile number on Borrower (BE · S) · [SCRUM-22](https://tharangage.atlassian.net/browse/SCRUM-22) – *implemented*
 As the library, I want to store each borrower's mobile number, so that we can contact them later.
 - `Borrower.mobile` column (nullable for existing rows). Included in `BorrowerResponse` / `GET /me`, and never shown to other users.
 - H2 and PostgreSQL schema update via `ddl-auto: update` for now (migrations: see US-10.3).
 
-### US-02.3 Registration page (FE · M) – *implemented*
+### US-02.3 Registration page (FE · M) · [SCRUM-23](https://tharangage.atlassian.net/browse/SCRUM-23) – *implemented*
 As a visitor, I want a sign-up form, so that I can create an account without contacting the library.
 - `/register` route, reachable from the landing page and the "not logged in" state.
 - Fields: first name, last name, email, mobile (with `+country code` hint), password, confirm password.
@@ -28,7 +30,7 @@ As a visitor, I want a sign-up form, so that I can create an account without con
 - On success: confirmation message, then a "Log in" button that starts the OIDC login (US-07.2).
 - Accessible: labels, error text linked with `aria-describedby`, keyboard-only flow works.
 
-### US-02.4 Borrower auto-created for console-created users (BE · S) – *not started*
+### US-02.4 Borrower auto-created for console-created users (BE · S) · [SCRUM-24](https://tharangage.atlassian.net/browse/SCRUM-24) – *not started*
 As an admin who creates a `user` in the Keycloak console, I want that person to be able to borrow without a separate registration step.
 - On the first authenticated `user` call, if no Borrower exists for `sub`, one is created from token claims (`given_name`, `family_name`, `email`). Mobile stays empty.
 - Idempotent under concurrent first calls (unique `keycloakUserId`; on conflict, re-read the row).
