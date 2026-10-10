@@ -13,6 +13,7 @@ public record BorrowerResponse(
         String firstname,
         String lastname,
         String email,
+        String mobile,
         LocalDateTime createdDate,
         LocalDateTime lastModifiedDate) {
 
@@ -22,6 +23,7 @@ public record BorrowerResponse(
                 borrower.getFirstname(),
                 borrower.getLastname(),
                 borrower.getEmail(),
+                borrower.getMobile(),
                 borrower.getCreatedDate(),
                 borrower.getLastModifiedDate());
     }
