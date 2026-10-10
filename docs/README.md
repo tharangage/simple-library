@@ -6,6 +6,7 @@
 | [`product/`](product/) | Product backlog: epics, user stories, milestones, assumptions |
 | [`product/epics/`](product/epics/) | One file per epic with its stories and acceptance criteria |
 | [`decisions/`](decisions/) | Open decisions and Architecture Decision Records (ADRs) |
+| [`architecture/`](architecture/) | Mermaid architecture diagrams (context, layers, flows, data model, deployment) |
 
 Start with [`product/backlog.md`](product/backlog.md).
 
