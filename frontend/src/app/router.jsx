@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router'
 import { RequireAuth } from '../auth/RequireAuth.jsx'
 import { SigninCallbackPage } from '../auth/SigninCallbackPage.jsx'
 import { BooksPage } from '../features/books/BooksPage.jsx'
+import { RegisterPage } from '../features/registration/RegisterPage.jsx'
 import { HomePage } from './HomePage.jsx'
 import { Layout } from './Layout.jsx'
 import { NotFoundPage } from './NotFoundPage.jsx'
@@ -13,6 +14,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <HomePage /> },
       { path: 'auth/callback', element: <SigninCallbackPage /> },
+      { path: 'register', element: <RegisterPage /> },
       {
         path: 'books',
         element: (

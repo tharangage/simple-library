@@ -17,7 +17,8 @@ import java.util.List;
 
 /**
  * Stateless resource server: every API call needs a Keycloak-issued bearer token.
- * Swagger UI itself, the OpenAPI document and the H2 console stay open so the login flow can start.
+ * Swagger UI itself, the OpenAPI document, the H2 console and {@code POST /apis/v1/registrations}
+ * stay open so the login flow can start and visitors can sign up.
  */
 @Configuration
 public class SecurityConfig {
@@ -33,6 +34,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/h2-console/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Self-registration: a visitor has no account, so no token yet.
+                        .requestMatchers(HttpMethod.POST, "/apis/v1/registrations").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()));
         return http.build();

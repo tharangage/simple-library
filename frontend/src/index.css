@@ -89,6 +89,19 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outlin
 .message { padding: 0.75rem 1rem; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); }
 .message--error { background: var(--error-bg); color: var(--error-text); border-color: transparent; }
 
+/* Forms (registration) */
+.auth-card { max-width: 30rem; margin: 2rem auto; padding: 1.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); display: grid; gap: 1rem; }
+.form { display: grid; gap: 1rem; }
+.form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.field { display: grid; gap: 0.25rem; }
+.field label { font-weight: 600; font-size: 0.9rem; }
+.field input { font: inherit; padding: 0.5rem 0.65rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text); }
+.field input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.field input[aria-invalid='true'] { border-color: var(--error-text); }
+.field__hint { margin: 0; font-size: 0.8rem; color: var(--muted); }
+.field__error { margin: 0; font-size: 0.85rem; color: var(--error-text); }
+@media (max-width: 480px) { .form__row { grid-template-columns: 1fr; } }
+
 /* Books table */
 .book-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
 .book-table th, .book-table td { text-align: left; padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--border); }

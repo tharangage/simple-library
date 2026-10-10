@@ -30,7 +30,7 @@ dto/         BookCreateRequest, BorrowerCreateRequest, BorrowBookRequest (Bean V
 entity/      Book, Borrower (UUID String ids, JPA auditing dates)
 exception/   NotFoundException, CustomResponseEntityExceptionHandler
 repository/  BookRepository, BorrowerRepository (JpaRepository<_, String>)
-service/     BookService, BorrowerService, BookBorrowerService
+service/     BookService, BorrowerService, BookBorrowerService, RegistrationService, KeycloakAdminClient (service account `library-backend`; secret `KEYCLOAK_ADMIN_CLIENT_SECRET`, see docs/setup/keycloak-registration.md)
 ```
 Other: `backend/Dockerfile`, `docker-compose.yaml` (app only), `keycloak/docker-compose.yml`
 (Keycloak + Postgres), `k8s/`, `Jenkinsfile`, `archive/` (old files — ignore).
@@ -40,6 +40,7 @@ Other: `backend/Dockerfile`, `docker-compose.yaml` (app only), `keycloak/docker-
 |---|---|---|
 | POST | `/apis/v1/books` | 201, registers a book |
 | GET | `/apis/v1/books` | 200, `Page<Book>` |
+| POST | `/apis/v1/registrations` | 201, **public** self-registration: creates the Keycloak user (Admin API) + Borrower; 409 `EMAIL_ALREADY_REGISTERED` |
 | POST | `/apis/v1/borrowers` | 200, registers a borrower |
 | POST | `/apis/v1/borrowers/{borrower-id}/books` | 200, borrow (`{"bookId": "<uuid>"}`) |
 | DELETE | `/apis/v1/borrowers/{borrower-id}/books/{book-id}` | 200, return |
@@ -56,7 +57,7 @@ The body for 404/409/500 is the plain message string.
 
 ## Security
 - Stateless OAuth2 resource server; JWTs issued by Keycloak realm **`library`**.
-- Open without a token: `/swagger-ui.html`, `/swagger-ui/**`, `/v3/api-docs/**`, `/h2-console/**`, all `OPTIONS`.
+- Open without a token: `/swagger-ui.html`, `/swagger-ui/**`, `/v3/api-docs/**`, `/h2-console/**`, all `OPTIONS`, `POST /apis/v1/registrations`.
 - Everything else just needs a valid token. **There are no role checks yet**, so test
   "no token → 401" and "valid `jwt()` → 2xx"; don't invent 403 tests unless roles are added.
 - `issuer-uri` = `${app.keycloak.public-url}/realms/${app.keycloak.realm}` (default `http://localhost:8080/realms/library`).
