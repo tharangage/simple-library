@@ -1,6 +1,7 @@
 # Simple Library – product backlog
 
 **Scope:** the ReactJS + JavaScript web app (no TypeScript) and the backend, Keycloak and ops work it depends on.
+**Jira:** project *ABKRT Team* (`SCRUM`), all issues labelled [`simple-library`](https://tharangage.atlassian.net/issues/?jql=labels%20%3D%20simple-library). Each story's summary starts with its `US-xx.y` ID; labels carry layer, size and milestone.
 **Sources:** [requirement](../requirements/simple-library-requirement-in-a-nutshell.md) · [gap analysis](../requirements/gap-analysis.md) · [open decisions](../decisions/README.md)
 
 ## Personas
@@ -12,18 +13,18 @@
 | **API user** | Swagger UI / any OIDC client in realm `library` | Calls the REST API directly with a bearer token |
 
 ## Epics
-| ID | Epic | Layers | Stories | Milestone |
-|---|---|---|---|---|
-| [E01](epics/E01-identity-and-access.md) | Identity & access (Keycloak realm `library`, roles) | IAM, BE | 6 | M1 |
-| [E02](epics/E02-self-registration.md) | User self-registration | BE, FE, IAM | 4 | M2 |
-| [E03](epics/E03-book-catalogue.md) | Book catalogue & availability | BE, FE | 5 | M2 |
-| [E04](epics/E04-borrowing.md) | Borrowing (limit 3) & "My books" | BE, FE | 3 | M3 |
-| [E05](epics/E05-reservations.md) | Reservations | BE, FE | 5 | M4 |
-| [E06](epics/E06-returns-admin.md) | Returns at the library desk (admin) | BE, FE | 3 | M3 |
-| [E07](epics/E07-frontend-foundation.md) | Web app foundation (React + JS) | FE, OPS | 8 | M1 |
-| [E08](epics/E08-api-contract-and-errors.md) | API contract & common error response | BE | 4 | M0 |
-| [E09](epics/E09-observability-and-gdpr.md) | Observability (OpenTelemetry) & GDPR | OPS, BE | 5 | M5 |
-| [E10](epics/E10-delivery-and-docs.md) | Delivery, environments & documentation | OPS | 4 | M5 |
+| ID | Epic | Layers | Stories | Milestone | Jira |
+|---|---|---|---|---|---|
+| [E01](epics/E01-identity-and-access.md) | Identity & access (Keycloak realm `library`, roles) | IAM, BE | 6 | M1 | [SCRUM-5](https://tharangage.atlassian.net/browse/SCRUM-5) |
+| [E02](epics/E02-self-registration.md) | User self-registration | BE, FE, IAM | 4 | M2 | [SCRUM-6](https://tharangage.atlassian.net/browse/SCRUM-6) |
+| [E03](epics/E03-book-catalogue.md) | Book catalogue & availability | BE, FE | 5 | M2 | [SCRUM-7](https://tharangage.atlassian.net/browse/SCRUM-7) |
+| [E04](epics/E04-borrowing.md) | Borrowing (limit 3) & "My books" | BE, FE | 3 | M3 | [SCRUM-8](https://tharangage.atlassian.net/browse/SCRUM-8) |
+| [E05](epics/E05-reservations.md) | Reservations | BE, FE | 5 | M4 | [SCRUM-9](https://tharangage.atlassian.net/browse/SCRUM-9) |
+| [E06](epics/E06-returns-admin.md) | Returns at the library desk (admin) | BE, FE | 3 | M3 | [SCRUM-10](https://tharangage.atlassian.net/browse/SCRUM-10) |
+| [E07](epics/E07-frontend-foundation.md) | Web app foundation (React + JS) | FE, OPS | 8 | M1 | [SCRUM-11](https://tharangage.atlassian.net/browse/SCRUM-11) |
+| [E08](epics/E08-api-contract-and-errors.md) | API contract & common error response | BE | 4 | M0 | [SCRUM-12](https://tharangage.atlassian.net/browse/SCRUM-12) |
+| [E09](epics/E09-observability-and-gdpr.md) | Observability (OpenTelemetry) & GDPR | OPS, BE | 5 | M5 | [SCRUM-13](https://tharangage.atlassian.net/browse/SCRUM-13) |
+| [E10](epics/E10-delivery-and-docs.md) | Delivery, environments & documentation | OPS | 4 | M5 | [SCRUM-14](https://tharangage.atlassian.net/browse/SCRUM-14) |
 
 ## Milestones (suggested order)
 | Milestone | Goal | Stories |
