@@ -7,11 +7,21 @@
 - **Font:** Inter. Colours are plain fills (no Figma variables or design system yet). The Figma file uses Inter; the app uses the system font stack, so letter shapes differ slightly (add Inter as a web font if an exact match matters).
 
 ## Frames
+Registration (top row of the canvas):
+
 | Frame | Node ID | Shows |
 |---|---|---|
 | Sign up – Default | `1:2` | Empty form with placeholders |
-| Sign up – Validation errors | `1:45` | Filled form, "This email is already registered" on Email, "Passwords do not match" on Confirm password |
+| Sign up – Validation errors | `1:45` | Filled form, "This email is already registered" under Email, "Passwords do not match" under Confirm password (field errors from a 400) |
 | Sign up – Success | `1:90` | Green check, "Account created", "Go to sign in" |
+| Sign up – Email already registered | `12:2` | The 409 case as built: a red banner above the form with a "Sign in" link, fields filled |
+
+The rest of the app in the same look (second row):
+
+| Frame | Node ID | Shows |
+|---|---|---|
+| Home – visitor | `12:49` | Welcome heading, **Log in** and **Create an account** buttons |
+| Books – list | `12:65` | Header with navigation and user, books table with status badges, pagination |
 
 Layout (all frames, 1440×900): blue **Header** (brand name, *Register* link, white *Log in* button) on top, then a grey **Page** area with a centred white **Card** (440 px, 12 px corners) that holds the form. Built with auto-layout. An earlier version of the frames had a full-screen two-panel layout with a blue brand panel; it was dropped in favour of the in-app layout.
 
@@ -26,5 +36,5 @@ Layout (all frames, 1440×900): blue **Header** (brand name, *Register* link, wh
 
 ## Open questions
 - Should sign-up stay a custom React page, or move to Keycloak's own registration page later (option b in D-01)?
-- Add a mobile layout and a matching sign-in screen?
+- Mobile layouts (the frames are desktop only; the code stacks the layout below 640 px and 900 px) and a matching sign-in screen are not designed.
 - Password rules: the form says "At least 8 characters"; keep the Keycloak password policy in step.
