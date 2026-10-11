@@ -87,7 +87,11 @@ class MeControllerTest {
                 .andExpect(jsonPath("$.borrower.mobile").value("+31612345678"))
                 .andExpect(jsonPath("$.borrower.borrowedCount").value(2))
                 .andExpect(jsonPath("$.borrower.maxItems").value(3))
-                .andExpect(jsonPath("$.borrower.remainingSlots").value(1));
+                .andExpect(jsonPath("$.borrower.remainingSlots").value(1))
+                // The name and email live once, at the top level; the borrower section does not repeat them.
+                .andExpect(jsonPath("$.borrower.firstname").doesNotExist())
+                .andExpect(jsonPath("$.borrower.lastname").doesNotExist())
+                .andExpect(jsonPath("$.borrower.email").doesNotExist());
     }
 
     @Test

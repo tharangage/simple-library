@@ -4,8 +4,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 
 /**
  * The signed-in user's profile. The same shape for every user, whatever their roles:
- * the identity comes from the token, and {@code borrower} holds the library details that belong only to
- * members (the Borrower record and how many books they hold). It is {@code null} for a caller who is not a
+ * the identity (name and email) comes from the token, and {@code borrower} holds only what belongs to library
+ * members (Borrower id, mobile, how many books they hold). It is {@code null} for a caller who is not a
  * member, for example a desk-only admin.
  */
 public record UserProfileResponse(
@@ -13,9 +13,9 @@ public record UserProfileResponse(
         String firstname,
         String lastname,
         String email,
-        MyBorrowerResponse borrower) {
+        BorrowerProfile borrower) {
 
-    public static UserProfileResponse of(final Jwt jwt, final MyBorrowerResponse borrower) {
+    public static UserProfileResponse of(final Jwt jwt, final BorrowerProfile borrower) {
         return new UserProfileResponse(
                 jwt.getSubject(),
                 jwt.getClaimAsString("given_name"),

@@ -1,6 +1,6 @@
 package com.ascendion.roshan.simple_library.controller;
 
-import com.ascendion.roshan.simple_library.dto.MyBorrowerResponse;
+import com.ascendion.roshan.simple_library.dto.BorrowerProfile;
 import com.ascendion.roshan.simple_library.dto.UserProfileResponse;
 import com.ascendion.roshan.simple_library.entity.Borrower;
 import com.ascendion.roshan.simple_library.security.CurrentUser;
@@ -32,10 +32,10 @@ public class MeController {
     @GetMapping
     public UserProfileResponse me() {
         final CurrentUser caller = CurrentUserHolder.require();
-        MyBorrowerResponse borrower = null;
+        BorrowerProfile borrower = null;
         if (caller.isUser()) {
             final Borrower entity = provisioningService.getOrCreate(caller.jwt());
-            borrower = MyBorrowerResponse.of(entity, bookBorrowerService.borrowedCount(entity.getId()),
+            borrower = BorrowerProfile.of(entity, bookBorrowerService.borrowedCount(entity.getId()),
                     bookBorrowerService.maxItemsPerBorrower());
         }
         return UserProfileResponse.of(caller.jwt(), borrower);

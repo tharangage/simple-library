@@ -81,7 +81,7 @@ Decisions taken while implementing, after the first design above. They replace t
 
 | Endpoint | Allowed | Provisions the caller's Borrower? |
 |---|---|---|
-| `GET /apis/v1/me` | `user`, `admin` | Yes for role `user`. One response shape for everybody (`UserProfileResponse`): the identity from the token (`userId`, `firstname`, `lastname`, `email`) plus `borrower`, which holds the Borrower detail (`MyBorrowerResponse`: `id`, `mobile`, `borrowedCount`, `maxItems`, `remainingSlots`, ...) for a caller with role `user` and is `null` for an admin without `user`. The web app calls it after login. |
+| `GET /apis/v1/me` | `user`, `admin` | Yes for role `user`. One response shape for everybody (`UserProfileResponse`): the identity from the token (`userId`, `firstname`, `lastname`, `email`) plus `borrower`, which holds only the Borrower-specific detail (`BorrowerProfile`: `id`, `mobile`, `borrowedCount`, `maxItems`, `remainingSlots`; name and email are not repeated) for a caller with role `user` and is `null` for an admin without `user`. The web app calls it after login. |
 | `POST /apis/v1/borrowers/{id}/books` (borrow) | `user`, `admin` | Yes for role `user`. An admin may use any `{id}` (library desk); everybody else only their own Borrower, otherwise 403 (SCRUM-62, US-04.1). |
 | `DELETE /apis/v1/borrowers/{id}/books/{book-id}` (return) | `admin` | No. Users cannot return books themselves. |
 
