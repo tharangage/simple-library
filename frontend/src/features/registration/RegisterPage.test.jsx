@@ -49,11 +49,9 @@ describe('RegisterPage', () => {
     vi.mocked(registerUser).mockReset()
   })
 
-  it('has the two-panel layout from the design: brand panel (linking home) and the form', () => {
+  it('shows the heading and subtitle from the design', () => {
     renderPage()
 
-    expect(screen.getByRole('link', { name: 'Simple Library' })).toHaveAttribute('href', '/')
-    expect(screen.getByText('Your library, always open.')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Create your account' })).toBeInTheDocument()
     expect(screen.getByText('Self-register as a library borrower.')).toBeInTheDocument()
   })

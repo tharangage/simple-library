@@ -16,12 +16,14 @@ export function HomePage() {
           Login failed: {auth.error.message}
         </p>
       )}
-      <button type="button" className="button--primary" onClick={() => auth.signinRedirect()}>
-        Log in
-      </button>
-      <p className="muted">
-        New here? <Link to="/register">Create an account</Link>
-      </p>
+      <div className="welcome__actions">
+        <button type="button" className="button--primary" onClick={() => auth.signinRedirect()}>
+          Log in
+        </button>
+        <Link to="/register" className="button-link">
+          Create an account
+        </Link>
+      </div>
     </section>
   )
 }

@@ -3,7 +3,7 @@
 - **Figma:** [Simple Library – Self-Registration](https://www.figma.com/design/napnNlVd3hy0LtHqzMtQtA) (file key `napnNlVd3hy0LtHqzMtQtA`)
 - **Status:** Draft, desktop only (1440×900). No mobile layout yet.
 - **Implemented** in code as E02 (US-02.1–02.3, merged in PR #11). The Figma frames match the built form: a **required Mobile number** (E.164, with a hint) and no address field.
-- **Frontend:** `frontend/src/features/registration/RegisterPage.jsx` follows the frames (two panels, 440 px form, same sizes, spacing, colours and wording such as "Sign in" / "Go to sign in"). `/register` is full-screen, outside the app header (`Layout`); the brand name links home. Below 900 px the panels stack and only the brand name stays on top (the design is desktop only). The blue is scoped to this page (`.auth-layout` in `index.css`), so the rest of the app keeps its green theme.
+- **Frontend:** `frontend/src/features/registration/RegisterPage.jsx` follows the frames for the form (440 px, same sizes, spacing, input and button style, colours and wording such as "Sign in" / "Go to sign in"). By choice it is shown **inside the normal app shell** (header + page area) as a centred card, not as the full-screen two-panel frame; the brand panel from the frames is not built. The whole app uses the design's look (blue header and accent, 8 px corners, Inter, bold headings), defined as tokens at the top of `frontend/src/index.css`, so Home and Books match the registration page.
 - **Font:** Inter. Colours are plain fills (no Figma variables or design system yet). The Figma file uses Inter; the app uses the system font stack, so letter shapes differ slightly (add Inter as a web font if an exact match matters).
 
 ## Frames
