@@ -70,7 +70,7 @@ class BorrowerProvisioningServiceTest {
         when(inserter.insert(any(Borrower.class))).thenAnswer(inv -> inv.getArgument(0));
 
         final Borrower result = service.getOrCreate(jwt(Map.of(
-                "given_name", "Ann", "family_name", "Lee", "email", " Ann@Example.com ")));
+                "given_name", "Ann", "family_name", "Lee", "email", " Ann@Example.com ", "email_verified", true)));
 
         assertThat(result.getFirstname()).isEqualTo("Ann");
         assertThat(result.getLastname()).isEqualTo("Lee");
@@ -88,6 +88,27 @@ class BorrowerProvisioningServiceTest {
 
         assertThat(result.getFirstname()).isEqualTo("ann42");
         assertThat(result.getLastname()).isEqualTo("ann42");
+    }
+
+    @Test
+    void getOrCreate_unverifiedEmail_createsWithoutStoringEmail() {
+        when(borrowerRepository.findByKeycloakUserId(SUB)).thenReturn(Optional.empty());
+        when(borrowerRepository.findFirstByEmailIgnoreCase("ann@example.com")).thenReturn(Optional.empty());
+        when(inserter.insert(any(Borrower.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        final Borrower result = service.getOrCreate(jwt(Map.of("given_name", "Ann", "email", "ann@example.com")));
+
+        assertThat(result.getEmail()).isNull();
+        assertThat(result.getFirstname()).isEqualTo("Ann");
+    }
+
+    @Test
+    void getOrCreate_noNamesAndNoEmail_throwsIllegalState() {
+        when(borrowerRepository.findByKeycloakUserId(SUB)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getOrCreate(jwt(Map.of())))
+                .isInstanceOf(IllegalStateException.class);
+        verifyNoInteractions(inserter);
     }
 
     @Test
@@ -113,12 +134,13 @@ class BorrowerProvisioningServiceTest {
     }
 
     @Test
-    void getOrCreate_duplicateKeyButNoRowForSub_rethrows() {
+    void getOrCreate_duplicateKeyButNoRowForSub_throwsEmailConflict() {
         when(borrowerRepository.findByKeycloakUserId(SUB)).thenReturn(Optional.empty());
         when(inserter.insert(any(Borrower.class))).thenThrow(new DataIntegrityViolationException("duplicate email"));
 
         assertThatThrownBy(() -> service.getOrCreate(jwt(Map.of("given_name", "Ann"))))
-                .isInstanceOf(DataIntegrityViolationException.class);
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Email already registered to another account");
     }
 
     @Test

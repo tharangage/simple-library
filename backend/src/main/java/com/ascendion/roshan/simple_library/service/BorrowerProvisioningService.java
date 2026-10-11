@@ -45,16 +45,25 @@ public class BorrowerProvisioningService {
             }
         }
 
+        final String firstname = firstNonBlank(jwt.getClaimAsString("given_name"), jwt.getClaimAsString("preferred_username"));
+        final String lastname = firstNonBlank(jwt.getClaimAsString("family_name"), jwt.getClaimAsString("preferred_username"));
+        if (firstname == null && lastname == null && email == null) {
+            throw new IllegalStateException("Token has no name or email to create a borrower from");
+        }
+
         final Borrower borrower = new Borrower();
-        borrower.setFirstname(firstNonBlank(jwt.getClaimAsString("given_name"), jwt.getClaimAsString("preferred_username")));
-        borrower.setLastname(firstNonBlank(jwt.getClaimAsString("family_name"), jwt.getClaimAsString("preferred_username")));
-        borrower.setEmail(email);
+        borrower.setFirstname(firstname);
+        borrower.setLastname(lastname);
+        // An unverified email is not stored: it could belong to someone else and would block them via the unique index.
+        borrower.setEmail(Boolean.TRUE.equals(jwt.getClaimAsBoolean("email_verified")) ? email : null);
         borrower.setKeycloakUserId(sub);
         try {
             return inserter.insert(borrower);
         } catch (DataIntegrityViolationException ex) {
             // A concurrent first call inserted the same keycloakUserId: return that row.
-            return borrowerRepository.findByKeycloakUserId(sub).orElseThrow(() -> ex);
+            // Otherwise the email unique index fired: another account owns that email.
+            return borrowerRepository.findByKeycloakUserId(sub)
+                    .orElseThrow(() -> new IllegalStateException("Email already registered to another account", ex));
         }
     }
 
