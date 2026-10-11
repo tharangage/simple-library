@@ -6,7 +6,7 @@ import { useCurrentUser } from '../features/user/useCurrentUser.js'
 export function Layout() {
   const auth = useAuth()
   // After login: load the current user. This also creates their Borrower on the backend (US-02.4).
-  const { data: borrower } = useCurrentUser({ log: true })
+  const borrower = useCurrentUser({ log: true }).data?.borrower
   const profile = auth.user?.profile
   const displayName = profile?.given_name || profile?.preferred_username
 

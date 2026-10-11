@@ -41,7 +41,7 @@ Decisions taken while implementing US-04.1 and US-04.2 (branch `feature/US-04.1-
 - Errors are plain-text bodies until US-08.2: 409 `BOOK_NOT_AVAILABLE` (book already borrowed), 409 `BORROW_LIMIT_REACHED`, 404 `Borrower not found` / `Book not found`. The book check comes before the limit check.
 - Concurrency: the borrower row and then the book row are locked (`SELECT ... FOR UPDATE`). An integration test sends 8 parallel borrows for one borrower and expects exactly 3 to succeed. Return only locks the book, so there is no deadlock.
 - `app.library.max-items-per-borrower` must be at least 1; a smaller value stops the application at startup. Both row locks wait at most 3 seconds (`jakarta.persistence.lock.timeout`), then the request fails with the lock exception, answered as 409.
-- `GET /apis/v1/borrowers/me` also returns `borrowedCount`, `maxItems` and `remainingSlots`. The "x of 3 used" figure comes from there, not from `GET /apis/v1/me` (which is the generic token profile, see ADR-001).
+- `GET /apis/v1/me` returns the same profile for every user; its `borrower` section (`id`, `mobile`, `borrowedCount`, `maxItems`, `remainingSlots`, ...) is filled for a caller with role `user` and `null` otherwise (see ADR-001). The "x of 3 used" figure comes from there.
 
 **Web app (US-04.2)**
 - The Books page shows a *Borrow* button on `AVAILABLE` rows, only for a user who has a Borrower (an admin without role `user` gets none). A confirmation dialog shows the title, the author and the places left.

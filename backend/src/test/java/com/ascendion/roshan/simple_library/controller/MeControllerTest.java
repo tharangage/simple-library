@@ -1,6 +1,8 @@
 package com.ascendion.roshan.simple_library.controller;
 
 import com.ascendion.roshan.simple_library.config.SecurityConfig;
+import com.ascendion.roshan.simple_library.entity.Borrower;
+import com.ascendion.roshan.simple_library.service.BookBorrowerService;
 import com.ascendion.roshan.simple_library.service.BorrowerProvisioningService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,10 +39,21 @@ class MeControllerTest {
     private BorrowerProvisioningService provisioningService;
 
     @MockitoBean
+    private BookBorrowerService bookBorrowerService;
+
+    @MockitoBean
     private JpaMetamodelMappingContext jpaMetamodelMappingContext;
 
     @MockitoBean
     private JwtDecoder jwtDecoder;
+
+    private static Borrower borrower() {
+        final Borrower borrower = new Borrower();
+        borrower.setId("b-1");
+        borrower.setFirstname("Ann");
+        borrower.setMobile("+31612345678");
+        return borrower;
+    }
 
     @Test
     void me_noToken_returns401() throws Exception {
@@ -57,7 +70,11 @@ class MeControllerTest {
     }
 
     @Test
-    void me_user_returnsTokenProfileAndProvisionsBorrower() throws Exception {
+    void me_user_returnsTokenProfileWithBorrowerSection() throws Exception {
+        when(provisioningService.getOrCreate(any(Jwt.class))).thenReturn(borrower());
+        when(bookBorrowerService.borrowedCount("b-1")).thenReturn(2L);
+        when(bookBorrowerService.maxItemsPerBorrower()).thenReturn(3);
+
         mockMvc.perform(get("/apis/v1/me").with(jwt().authorities(USER)
                         .jwt(j -> j.subject("kc-1").claim("given_name", "Ann").claim("family_name", "Lee")
                                 .claim("email", "ann@example.com"))))
@@ -65,30 +82,44 @@ class MeControllerTest {
                 .andExpect(jsonPath("$.userId").value("kc-1"))
                 .andExpect(jsonPath("$.firstname").value("Ann"))
                 .andExpect(jsonPath("$.lastname").value("Lee"))
-                .andExpect(jsonPath("$.email").value("ann@example.com"));
-
-        verify(provisioningService).getOrCreate(any(Jwt.class));
+                .andExpect(jsonPath("$.email").value("ann@example.com"))
+                .andExpect(jsonPath("$.borrower.id").value("b-1"))
+                .andExpect(jsonPath("$.borrower.mobile").value("+31612345678"))
+                .andExpect(jsonPath("$.borrower.borrowedCount").value(2))
+                .andExpect(jsonPath("$.borrower.maxItems").value(3))
+                .andExpect(jsonPath("$.borrower.remainingSlots").value(1));
     }
 
     @Test
-    void me_userAlsoAdmin_isProvisioned() throws Exception {
+    void me_userAlsoAdmin_hasABorrowerSection() throws Exception {
+        when(provisioningService.getOrCreate(any(Jwt.class))).thenReturn(borrower());
+
         mockMvc.perform(get("/apis/v1/me").with(jwt().authorities(USER, ADMIN)))
-                .andExpect(status().isOk());
-
-        verify(provisioningService).getOrCreate(any(Jwt.class));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.borrower.id").value("b-1"));
     }
 
     @Test
-    void me_adminOnly_returnsSameProfileWithoutProvisioning() throws Exception {
+    void me_adminOnly_hasNoBorrowerAndIsNotProvisioned() throws Exception {
         mockMvc.perform(get("/apis/v1/me")
                         .with(jwt().authorities(ADMIN).jwt(j -> j.subject("kc-2").claim("given_name", "Ada")
                                 .claim("email", "ada@example.com"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value("kc-2"))
                 .andExpect(jsonPath("$.firstname").value("Ada"))
-                .andExpect(jsonPath("$.email").value("ada@example.com"));
+                .andExpect(jsonPath("$.email").value("ada@example.com"))
+                .andExpect(jsonPath("$.borrower").doesNotExist());
 
         verifyNoInteractions(provisioningService);
+    }
+
+    @Test
+    void me_user_createsTheBorrowerThroughTheService() throws Exception {
+        when(provisioningService.getOrCreate(any(Jwt.class))).thenReturn(borrower());
+
+        mockMvc.perform(get("/apis/v1/me").with(jwt().authorities(USER))).andExpect(status().isOk());
+
+        verify(provisioningService).getOrCreate(any(Jwt.class));
     }
 
     @Test

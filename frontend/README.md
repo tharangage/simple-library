@@ -27,9 +27,9 @@ Every pull request that touches `frontend/` runs `.github/workflows/frontend.yml
 coverage gate, a production build and `npm audit`. Run the same commands locally before pushing to avoid surprises.
 CodeQL also scans the JavaScript for security problems, and Dependabot opens weekly update PRs.
 
-The Books page has a *Borrow* button on available books (US-04.2): confirmation dialog, toast, list and counts reload, disabled at the limit of 3. The header shows "x of 3 used". Both use the data of `GET /apis/v1/borrowers/me`; a user without a Borrower (admin only) sees no Borrow buttons.
+The Books page has a *Borrow* button on available books (US-04.2): confirmation dialog, toast, list and counts reload, disabled at the limit of 3. The header shows "x of 3 used". Both use the `borrower` section of `GET /apis/v1/me`; a user without one (admin only) sees no Borrow buttons.
 
-After login the app calls `GET /apis/v1/borrowers/me` (`features/user/useCurrentUser.js`, mounted in `Layout`). This makes the backend create the user's Borrower on the first sign-in (US-02.4). For now the response is only logged to the browser console (`[library] GET /apis/v1/borrowers/me`); an admin without the `user` role gets 403, logged as a warning. The result is cached under the query key `['currentUser', sub]` for pages to use later.
+After login the app calls `GET /apis/v1/me` (`features/user/useCurrentUser.js`, mounted in `Layout`). It is the same call for every user: the identity from the token plus a `borrower` section that is `null` for an admin without the `user` role. For a user it makes the backend create the Borrower on the first sign-in (US-02.4). In development builds the response is also logged to the browser console (`[library] GET /apis/v1/me`). The result is cached under the query key `['currentUser', sub]` for pages to use later.
 
 Settings live in `.env` (API URL, Keycloak URL, realm, client id), created from `.env.example`. `.env` is not committed.
 

@@ -81,14 +81,13 @@ Decisions taken while implementing, after the first design above. They replace t
 
 | Endpoint | Allowed | Provisions the caller's Borrower? |
 |---|---|---|
-| `GET /apis/v1/borrowers/me` | `user` (admin only → 403) | Yes, and returns the Borrower (`BorrowerResponse`). The web app calls it after login. |
-| `GET /apis/v1/me` | `user`, `admin` | Yes for role `user`. Returns the same token profile for everybody (`UserProfileResponse`: `userId`, `firstname`, `lastname`, `email`). |
+| `GET /apis/v1/me` | `user`, `admin` | Yes for role `user`. One response shape for everybody (`UserProfileResponse`): the identity from the token (`userId`, `firstname`, `lastname`, `email`) plus `borrower`, which holds the Borrower detail (`MyBorrowerResponse`: `id`, `mobile`, `borrowedCount`, `maxItems`, `remainingSlots`, ...) for a caller with role `user` and is `null` for an admin without `user`. The web app calls it after login. |
 | `POST /apis/v1/borrowers/{id}/books` (borrow) | `user`, `admin` | Yes for role `user`. An admin may use any `{id}` (library desk); everybody else only their own Borrower, otherwise 403 (SCRUM-62, US-04.1). |
 | `DELETE /apis/v1/borrowers/{id}/books/{book-id}` (return) | `admin` | No. Users cannot return books themselves. |
 
 **Where it runs**
-- `BorrowerProvisioningInterceptor` (a Spring `HandlerInterceptor`, registered in `WebConfig`) calls `getOrCreate` for `/apis/v1/me` and borrow only. An interceptor runs after Spring Security, can be limited to paths, and its exceptions still reach the `@ControllerAdvice`. Return is not included. It is not applied to every API: that would add a database lookup to every call and let a provisioning failure (such as a 409) block unrelated endpoints such as the book list.
-- `GET /apis/v1/borrowers/me` calls the service directly because it must return the Borrower. The provisioning interceptor does not pass the Borrower on to controllers; it only makes sure it exists.
+- `BorrowerProvisioningInterceptor` (a Spring `HandlerInterceptor`, registered in `WebConfig`) calls `getOrCreate` on borrow only. An interceptor runs after Spring Security, can be limited to paths, and its exceptions still reach the `@ControllerAdvice`. Return is not included. It is not applied to every API: that would add a database lookup to every call and let a provisioning failure (such as a 409) block unrelated endpoints such as the book list.
+- `GET /apis/v1/me` calls the service directly because it must return the Borrower (it first lived at `GET /apis/v1/borrowers/me` and was merged into `/me`, so that every user has one profile call and the Borrower detail is one optional section of it). The provisioning interceptor does not pass the Borrower on to controllers; it only makes sure it exists.
 - A separate `CurrentUserInterceptor` (all `/apis/**`) stores the caller's token details (`CurrentUser`: the `Jwt` and its authorities) in a `ThreadLocal` (`CurrentUserHolder`) and clears it after the request. Controllers read the caller from there. The borrow check uses it: a non-admin's own Borrower is looked up with `getOrCreate(caller.jwt())` and compared with the borrower id in the path.
 
 **Changes to the first design**
@@ -99,7 +98,7 @@ Decisions taken while implementing, after the first design above. They replace t
 - `AccessDeniedException` is mapped to 403 in `CustomResponseEntityExceptionHandler`.
 
 **Web app**
-- After login the app calls `GET /apis/v1/borrowers/me` (hook `useCurrentUser`, mounted in `Layout`) and for now only logs the result to the browser console. Later pages can read the same cached query to fill the screens. An admin without role `user` gets 403, which is logged as a warning.
+- After login the app calls `GET /apis/v1/me` (hook `useCurrentUser`, mounted in `Layout`) and logs the result to the browser console in development. Pages read the same cached query: `data.borrower` drives the Borrow buttons and the "x of 3 used" text, and is `null` for an admin without role `user`.
 
 **Known gaps**
 - `GET /apis/v1/me` shows only the token profile but, for role `user`, provisions first. A provisioning failure (409: unverified email matching an older Borrower, or a token with no name and no email) therefore also fails `/me` and borrow for that user. Accepted so a problem is seen at the first call.

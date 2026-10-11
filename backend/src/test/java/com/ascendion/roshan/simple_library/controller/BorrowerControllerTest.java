@@ -3,7 +3,6 @@ package com.ascendion.roshan.simple_library.controller;
 import com.ascendion.roshan.simple_library.config.SecurityConfig;
 import com.ascendion.roshan.simple_library.dto.BorrowerCreateRequest;
 import com.ascendion.roshan.simple_library.entity.Borrower;
-import com.ascendion.roshan.simple_library.service.BookBorrowerService;
 import com.ascendion.roshan.simple_library.service.BorrowerService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,8 +10,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -21,7 +18,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -50,54 +46,6 @@ class BorrowerControllerTest {
 
     @MockitoBean
     private com.ascendion.roshan.simple_library.service.BorrowerProvisioningService provisioningService;
-
-    @MockitoBean
-    private BookBorrowerService bookBorrowerService;
-
-    @Test
-    void me_noToken_returns401() throws Exception {
-        mockMvc.perform(get(URL + "/me")).andExpect(status().isUnauthorized());
-
-        verifyNoInteractions(provisioningService);
-    }
-
-    @Test
-    void me_adminOnly_returns403() throws Exception {
-        mockMvc.perform(get(URL + "/me").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
-                .andExpect(status().isForbidden());
-
-        verifyNoInteractions(provisioningService);
-    }
-
-    @Test
-    void me_user_returnsProvisionedBorrower() throws Exception {
-        final Borrower borrower = new Borrower();
-        borrower.setId("b-1");
-        borrower.setFirstname("Ann");
-        borrower.setEmail("ann@example.com");
-        when(provisioningService.getOrCreate(any(Jwt.class))).thenReturn(borrower);
-        when(bookBorrowerService.borrowedCount("b-1")).thenReturn(2L);
-        when(bookBorrowerService.maxItemsPerBorrower()).thenReturn(3);
-
-        mockMvc.perform(get(URL + "/me").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value("b-1"))
-                .andExpect(jsonPath("$.firstname").value("Ann"))
-                .andExpect(jsonPath("$.email").value("ann@example.com"))
-                .andExpect(jsonPath("$.borrowedCount").value(2))
-                .andExpect(jsonPath("$.maxItems").value(3))
-                .andExpect(jsonPath("$.remainingSlots").value(1));
-    }
-
-    @Test
-    void me_emailNotVerifiedForLegacyBorrower_returns409() throws Exception {
-        when(provisioningService.getOrCreate(any(Jwt.class)))
-                .thenThrow(new IllegalStateException("Email matches an existing borrower but is not verified"));
-
-        mockMvc.perform(get(URL + "/me").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))))
-                .andExpect(status().isConflict())
-                .andExpect(content().string("Email matches an existing borrower but is not verified"));
-    }
 
     @Test
     void registerBorrower_noToken_returns401() throws Exception {

@@ -17,8 +17,8 @@ public class WebConfig implements WebMvcConfigurer {
 
     /**
      * 1. {@link CurrentUserInterceptor}: token details of the caller for every API call that has a token.
-     * 2. {@link BorrowerProvisioningInterceptor}: creates the caller's Borrower on {@code /me} and on borrow only.
-     *    Return is an admin action and needs no Borrower for the caller.
+     * 2. {@link BorrowerProvisioningInterceptor}: creates the caller's Borrower on borrow. {@code GET /me} creates it
+     *    itself because it returns it. Return is an admin action and needs no Borrower for the caller.
      */
     @Override
     public void addInterceptors(final InterceptorRegistry registry) {
@@ -26,7 +26,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .addPathPatterns("/apis/**")
                 .order(0);
         registry.addInterceptor(new BorrowerProvisioningInterceptor(provisioningService))
-                .addPathPatterns("/apis/v1/me", "/apis/v1/me/**", "/apis/v1/borrowers/*/books")
+                .addPathPatterns("/apis/v1/borrowers/*/books")
                 .order(1);
     }
 }

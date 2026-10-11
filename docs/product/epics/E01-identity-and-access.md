@@ -67,12 +67,12 @@ As the library, I want only admins to borrow on behalf of another borrower, so t
 
 ### US-01.8 Desk-only admin accounts are not created as borrowers (BE/IAM · S) · [SCRUM-63](https://tharangage.atlassian.net/browse/SCRUM-63)
 As the library, I want desk-only staff accounts to stay out of the borrower table, so that borrower records only exist for real library members.
-- Origin: accepted gap of US-02.4. `user` is a realm default role, so an admin created in the Keycloak console also gets `user` and is provisioned as a Borrower on their first call to `/apis/v1/borrowers/me`, `/apis/v1/me` or borrow.
-- Options, to decide in refinement: (1) Keycloak only: unassign `default-roles-library` from desk-only admins, assign `admin` alone, and document it in `docs/setup/`; (2) backend rule: a caller with `admin` gets no Borrower even with `user` (`BorrowerProvisioningInterceptor`, `GET /borrowers/me`, tests, ADR-001); (3) keep as is.
+- Origin: accepted gap of US-02.4. `user` is a realm default role, so an admin created in the Keycloak console also gets `user` and is provisioned as a Borrower on their first call to `/apis/v1/me` or borrow.
+- Options, to decide in refinement: (1) Keycloak only: unassign `default-roles-library` from desk-only admins, assign `admin` alone, and document it in `docs/setup/`; (2) backend rule: a caller with `admin` gets no Borrower even with `user` (`BorrowerProvisioningInterceptor`, `GET /me`, tests, ADR-001); (3) keep as is.
 - Done when a desk-only admin has no Borrower row after using the API and a self-registered user still gets `user` and a Borrower.
 
 ### US-01.9 `GET /me` must not fail when Borrower provisioning fails (BE · S) · [SCRUM-64](https://tharangage.atlassian.net/browse/SCRUM-64)
 As a user, I want `GET /apis/v1/me` to show my profile even when my Borrower cannot be created yet, so that a provisioning problem does not break a read-only call.
 - Origin: accepted gap of US-02.4. The interceptor provisions before `/me`, so a 409 (token email matches an older Borrower with `email_verified` not true, token without name and email, email clash) also fails `/me`. `GET /me` is also a read with a side effect.
-- `/me` returns the token profile even when provisioning throws; the failure is logged without personal data. Provisioning stays strict on borrow and on `GET /borrowers/me`. Alternative: stop provisioning on `/me` altogether.
+- `/me` returns the token profile even when provisioning throws; the failure is logged without personal data. Provisioning stays strict on borrow. Alternative: leave `borrower` out of `/me` when provisioning fails, or stop provisioning on `/me` altogether.
 - Tests cover `/me` with a provisioning failure; the ADR-001 endpoint table is updated.

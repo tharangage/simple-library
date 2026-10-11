@@ -40,7 +40,7 @@ describe('Layout', () => {
 
   it('shows how many books the user holds once the borrower is loaded', () => {
     mockAuth = createMockAuth({ isAuthenticated: true, user: loggedInUser })
-    mockCurrentUser.data = { id: 'b-1', borrowedCount: 2, maxItems: 3, remainingSlots: 1 }
+    mockCurrentUser.data = { userId: 'u-1', borrower: { id: 'b-1', borrowedCount: 2, maxItems: 3, remainingSlots: 1 } }
     renderLayout()
 
     expect(screen.getByText('2 of 3 used')).toBeInTheDocument()
@@ -48,6 +48,7 @@ describe('Layout', () => {
 
   it('shows no usage text for a user without a borrower (admin only)', () => {
     mockAuth = createMockAuth({ isAuthenticated: true, user: loggedInUser })
+    mockCurrentUser.data = { userId: 'u-2', borrower: null }
     renderLayout()
 
     expect(screen.queryByText(/used$/)).not.toBeInTheDocument()

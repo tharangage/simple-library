@@ -50,7 +50,6 @@ public class SecurityConfig {
                         // Returning a book is a library-desk action: users cannot return books themselves.
                         .requestMatchers(HttpMethod.DELETE, "/apis/v1/borrowers/*/books/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/apis/v1/borrowers/*/books").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/apis/v1/borrowers/me").hasRole("USER")
                         .requestMatchers("/apis/v1/me", "/apis/v1/me/**").hasAnyRole("USER", "ADMIN")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));

@@ -38,7 +38,7 @@ Design: [ADR-001](../../decisions/ADR-001-borrower-provisioning.md).
 - Linked by `sub` only. An older Borrower row with the same email and no `keycloakUserId` is linked only when the token has `email_verified=true`; otherwise the call answers 409.
 - Only users with role `user` get a Borrower (also if they have other roles). Later tokens never overwrite the stored profile.
 - An email without `email_verified=true` is not stored on a new Borrower. A token with neither name nor email gets 409.
-- Web app: after login it calls `GET /apis/v1/borrowers/me` and logs the response to the browser console (for development; pages will use it later).
+- Web app: after login it calls `GET /apis/v1/me` (identity from the token plus a `borrower` section for role `user`) and logs the response to the browser console in development; the Books page uses it.
 - Document the Keycloak setup per IdP (name and email mappers, "trust email", `profile` and `email` scopes) in `docs/setup/`.
 - Tested with mocked JWTs only; no real Keycloak.
 
