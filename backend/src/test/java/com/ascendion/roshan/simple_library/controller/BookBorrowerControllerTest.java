@@ -2,9 +2,11 @@ package com.ascendion.roshan.simple_library.controller;
 
 import com.ascendion.roshan.simple_library.config.SecurityConfig;
 import com.ascendion.roshan.simple_library.dto.BorrowBookRequest;
+import com.ascendion.roshan.simple_library.entity.Borrower;
 import com.ascendion.roshan.simple_library.exception.NotFoundException;
 import com.ascendion.roshan.simple_library.service.BookBorrowerService;
 import com.ascendion.roshan.simple_library.service.BorrowerProvisioningService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +17,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -28,6 +31,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -71,6 +75,13 @@ class BookBorrowerControllerTest {
         return jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"));
     }
 
+    @BeforeEach
+    void provisionedBorrower() {
+        final Borrower borrower = new Borrower();
+        borrower.setId(BORROWER_ID);
+        when(provisioningService.getOrCreate(any(Jwt.class))).thenReturn(borrower);
+    }
+
     private static String borrowBody(final String bookId) {
         return "{\"bookId\":\"" + bookId + "\"}";
     }
@@ -83,6 +94,41 @@ class BookBorrowerControllerTest {
                 .andExpect(status().isUnauthorized());
 
         verifyNoInteractions(bookBorrowerService);
+    }
+
+    @Test
+    void borrowBook_userForAnotherBorrower_returns403() throws Exception {
+        mockMvc.perform(post(BORROW_URL, UUID.randomUUID().toString()).with(asUser())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(borrowBody(BOOK_ID)))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(bookBorrowerService);
+    }
+
+    @Test
+    void borrowBook_userAlsoAdmin_canBorrowForAnotherBorrower() throws Exception {
+        final String otherBorrowerId = UUID.randomUUID().toString();
+
+        mockMvc.perform(post(BORROW_URL, otherBorrowerId)
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"), new SimpleGrantedAuthority("ROLE_ADMIN")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(borrowBody(BOOK_ID)))
+                .andExpect(status().isOk());
+
+        verify(bookBorrowerService).borrowBook(eq(otherBorrowerId), any(BorrowBookRequest.class));
+    }
+
+    @Test
+    void borrowBook_limitReached_returns409WithCode() throws Exception {
+        doThrow(new IllegalStateException("BORROW_LIMIT_REACHED"))
+                .when(bookBorrowerService).borrowBook(eq(BORROWER_ID), any(BorrowBookRequest.class));
+
+        mockMvc.perform(post(BORROW_URL, BORROWER_ID).with(asUser())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(borrowBody(BOOK_ID)))
+                .andExpect(status().isConflict())
+                .andExpect(content().string("BORROW_LIMIT_REACHED"));
     }
 
     @Test
@@ -170,14 +216,14 @@ class BookBorrowerControllerTest {
 
     @Test
     void borrowBook_alreadyBorrowed_returns409WithMessage() throws Exception {
-        doThrow(new IllegalStateException("Book is already borrowed"))
+        doThrow(new IllegalStateException("BOOK_NOT_AVAILABLE"))
                 .when(bookBorrowerService).borrowBook(eq(BORROWER_ID), any(BorrowBookRequest.class));
 
         mockMvc.perform(post(BORROW_URL, BORROWER_ID).with(asUser())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(borrowBody(BOOK_ID)))
                 .andExpect(status().isConflict())
-                .andExpect(content().string("Book is already borrowed"));
+                .andExpect(content().string("BOOK_NOT_AVAILABLE"));
     }
 
     @Test

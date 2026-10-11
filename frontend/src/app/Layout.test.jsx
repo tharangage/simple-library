@@ -1,13 +1,14 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMockAuth, loggedInUser } from '../test/mockAuth.js'
 import { Layout } from './Layout.jsx'
 
 let mockAuth
 vi.mock('react-oidc-context', () => ({ useAuth: () => mockAuth }))
-vi.mock('../features/user/useCurrentUser.js', () => ({ useCurrentUser: vi.fn() }))
+const mockCurrentUser = { data: undefined }
+vi.mock('../features/user/useCurrentUser.js', () => ({ useCurrentUser: () => mockCurrentUser }))
 
 const renderLayout = () =>
   render(
@@ -21,6 +22,10 @@ const renderLayout = () =>
   )
 
 describe('Layout', () => {
+  beforeEach(() => {
+    mockCurrentUser.data = undefined
+  })
+
   it('shows navigation, the user name and a working logout for a logged-in user', async () => {
     mockAuth = createMockAuth({ isAuthenticated: true, user: loggedInUser })
     renderLayout()
@@ -31,6 +36,21 @@ describe('Layout', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Log out' }))
     expect(mockAuth.signoutRedirect).toHaveBeenCalled()
+  })
+
+  it('shows how many books the user holds once the borrower is loaded', () => {
+    mockAuth = createMockAuth({ isAuthenticated: true, user: loggedInUser })
+    mockCurrentUser.data = { id: 'b-1', borrowedCount: 2, maxItems: 3, remainingSlots: 1 }
+    renderLayout()
+
+    expect(screen.getByText('2 of 3 used')).toBeInTheDocument()
+  })
+
+  it('shows no usage text for a user without a borrower (admin only)', () => {
+    mockAuth = createMockAuth({ isAuthenticated: true, user: loggedInUser })
+    renderLayout()
+
+    expect(screen.queryByText(/used$/)).not.toBeInTheDocument()
   })
 
   it('shows only a login button to an anonymous visitor', async () => {

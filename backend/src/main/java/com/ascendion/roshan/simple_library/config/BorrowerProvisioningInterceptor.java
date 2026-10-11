@@ -1,16 +1,15 @@
 package com.ascendion.roshan.simple_library.config;
 
+import com.ascendion.roshan.simple_library.security.CurrentUserHolder;
 import com.ascendion.roshan.simple_library.service.BorrowerProvisioningService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
  * US-02.4: every caller with the role {@code user} has a Borrower. Creates it on the first call.
- * Callers without the role (admin only) get no Borrower. Registered only for the paths that need it.
+ * Callers without the role (admin only) get no Borrower. Registered only for the paths that need it,
+ * after {@code CurrentUserInterceptor} has filled {@code CurrentUserHolder}.
  */
 public class BorrowerProvisioningInterceptor implements HandlerInterceptor {
 
@@ -22,12 +21,9 @@ public class BorrowerProvisioningInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(final HttpServletRequest request, final HttpServletResponse response, final Object handler) {
-        final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null
-                && authentication.getPrincipal() instanceof Jwt jwt
-                && authentication.getAuthorities().stream().anyMatch(a -> SecurityConfig.ROLE_USER.equals(a.getAuthority()))) {
-            provisioningService.getOrCreate(jwt);
-        }
+        CurrentUserHolder.get()
+                .filter(user -> user.isUser())
+                .ifPresent(user -> provisioningService.getOrCreate(user.jwt()));
         return true;
     }
 }

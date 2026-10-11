@@ -4,6 +4,22 @@ import { ApiError, apiGet, apiPost } from './client.js'
 const jsonResponse = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 
+describe('empty response bodies', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('returns null for 200 with no body (borrow answers that way)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('', { status: 200 })))
+
+    await expect(apiPost('/x', { a: 1 })).resolves.toBeNull()
+  })
+
+  it('returns null for 204', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 204 })))
+
+    await expect(apiPost('/x', {})).resolves.toBeNull()
+  })
+})
+
 describe('apiGet', () => {
   afterEach(() => vi.unstubAllGlobals())
 

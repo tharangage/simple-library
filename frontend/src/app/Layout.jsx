@@ -5,7 +5,8 @@ import { useCurrentUser } from '../features/user/useCurrentUser.js'
 /** The frame around every page: header with navigation and the login/logout button. */
 export function Layout() {
   const auth = useAuth()
-  useCurrentUser() // after login: load the current user (this also creates their Borrower on the backend); logged to the console for now
+  // After login: load the current user. This also creates their Borrower on the backend (US-02.4).
+  const { data: borrower } = useCurrentUser({ log: true })
   const profile = auth.user?.profile
   const displayName = profile?.given_name || profile?.preferred_username
 
@@ -23,6 +24,11 @@ export function Layout() {
         <div className="topbar__user">
           {auth.isAuthenticated ? (
             <>
+              {borrower && (
+                <span className="muted usage" title="Books you currently hold">
+                  {borrower.borrowedCount} of {borrower.maxItems} used
+                </span>
+              )}
               <span className="muted">Hi, {displayName}</span>
               <button type="button" onClick={() => auth.signoutRedirect()}>
                 Log out

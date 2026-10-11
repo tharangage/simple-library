@@ -27,7 +27,7 @@ afterEach(() => vi.restoreAllMocks())
 describe('useCurrentUser', () => {
   it('does nothing while the user is not logged in', () => {
     mockAuth = createMockAuth()
-    renderHook(() => useCurrentUser(), { wrapper })
+    renderHook(() => useCurrentUser({ log: true }), { wrapper })
     expect(fetchMyBorrower).not.toHaveBeenCalled()
   })
 
@@ -36,7 +36,7 @@ describe('useCurrentUser', () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => {})
     vi.mocked(fetchMyBorrower).mockResolvedValue({ id: 'b-1', firstname: 'Ada' })
 
-    renderHook(() => useCurrentUser(), { wrapper })
+    renderHook(() => useCurrentUser({ log: true }), { wrapper })
 
     await waitFor(() => expect(log).toHaveBeenCalledWith(expect.stringContaining('/borrowers/me'), { id: 'b-1', firstname: 'Ada' }))
     expect(fetchMyBorrower).toHaveBeenCalledWith({ token: 'test-token' })
@@ -46,7 +46,7 @@ describe('useCurrentUser', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {})
     vi.mocked(fetchMyBorrower).mockResolvedValue({ id: 'b-1' })
     mockAuth = createMockAuth({ isAuthenticated: true, user: { ...loggedInUser, profile: { sub: 'u-1' } } })
-    const { rerender } = renderHook(() => useCurrentUser(), { wrapper: sharedClientWrapper() })
+    const { rerender } = renderHook(() => useCurrentUser({ log: true }), { wrapper: sharedClientWrapper() })
     await waitFor(() => expect(fetchMyBorrower).toHaveBeenCalledTimes(1))
 
     mockAuth = createMockAuth({ isAuthenticated: true, user: { ...loggedInUser, profile: { sub: 'u-2' } } })
@@ -60,7 +60,7 @@ describe('useCurrentUser', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     vi.mocked(fetchMyBorrower).mockRejectedValue(new ApiError(403, 'Access denied'))
 
-    renderHook(() => useCurrentUser(), { wrapper })
+    renderHook(() => useCurrentUser({ log: true }), { wrapper })
 
     await waitFor(() => expect(warn).toHaveBeenCalledWith(expect.stringContaining('403')))
   })

@@ -3,6 +3,7 @@ package com.ascendion.roshan.simple_library.controller;
 import com.ascendion.roshan.simple_library.config.SecurityConfig;
 import com.ascendion.roshan.simple_library.dto.BorrowerCreateRequest;
 import com.ascendion.roshan.simple_library.entity.Borrower;
+import com.ascendion.roshan.simple_library.service.BookBorrowerService;
 import com.ascendion.roshan.simple_library.service.BorrowerService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +51,9 @@ class BorrowerControllerTest {
     @MockitoBean
     private com.ascendion.roshan.simple_library.service.BorrowerProvisioningService provisioningService;
 
+    @MockitoBean
+    private BookBorrowerService bookBorrowerService;
+
     @Test
     void me_noToken_returns401() throws Exception {
         mockMvc.perform(get(URL + "/me")).andExpect(status().isUnauthorized());
@@ -72,12 +76,17 @@ class BorrowerControllerTest {
         borrower.setFirstname("Ann");
         borrower.setEmail("ann@example.com");
         when(provisioningService.getOrCreate(any(Jwt.class))).thenReturn(borrower);
+        when(bookBorrowerService.borrowedCount("b-1")).thenReturn(2L);
+        when(bookBorrowerService.maxItemsPerBorrower()).thenReturn(3);
 
         mockMvc.perform(get(URL + "/me").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("b-1"))
                 .andExpect(jsonPath("$.firstname").value("Ann"))
-                .andExpect(jsonPath("$.email").value("ann@example.com"));
+                .andExpect(jsonPath("$.email").value("ann@example.com"))
+                .andExpect(jsonPath("$.borrowedCount").value(2))
+                .andExpect(jsonPath("$.maxItems").value(3))
+                .andExpect(jsonPath("$.remainingSlots").value(1));
     }
 
     @Test

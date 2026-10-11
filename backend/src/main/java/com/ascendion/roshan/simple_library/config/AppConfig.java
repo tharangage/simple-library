@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties(KeycloakAdminProperties.class)
+@EnableConfigurationProperties({KeycloakAdminProperties.class, LibraryProperties.class})
 public class AppConfig {
 
     @Bean
