@@ -4,7 +4,7 @@
 
 **Goal:** A visitor creates their own account (role `user`) from the web app with a name, a valid-format email and mobile number, and a password.
 **Requirement refs:** Frontend #1
-**Decisions:** D-01 (stories below assume option **a**), assumptions A-01, A-08, A-12
+**Decisions:** D-01 (stories below assume option **a**), D-11 ([ADR-001](../../decisions/ADR-001-borrower-provisioning.md), for US-02.4), assumptions A-01, A-08, A-12
 
 ### US-02.1 Public registration API (BE · L) · [SCRUM-21](https://tharangage.atlassian.net/browse/SCRUM-21) – *done* (merged in PR #11)
 As a visitor, I want to register with my details, so that I can log in and borrow books.
@@ -30,10 +30,15 @@ As a visitor, I want a sign-up form, so that I can create an account without con
 - On success: confirmation message, then a "Log in" button that starts the OIDC login (US-07.2).
 - Accessible: labels, error text linked with `aria-describedby`, keyboard-only flow works.
 
-### US-02.4 Borrower auto-created for console-created users (BE · S) · [SCRUM-24](https://tharangage.atlassian.net/browse/SCRUM-24) – *not started*
-As an admin who creates a `user` in the Keycloak console, I want that person to be able to borrow without a separate registration step.
-- On the first authenticated `user` call, if no Borrower exists for `sub`, one is created from token claims (`given_name`, `family_name`, `email`). Mobile stays empty.
-- Idempotent under concurrent first calls (unique `keycloakUserId`; on conflict, re-read the row).
+### US-02.4 Borrower created on first sign-in (console and brokered IdP users) (BE · S) · [SCRUM-24](https://tharangage.atlassian.net/browse/SCRUM-24) – *not started*
+As a user whose Keycloak account was created in the Keycloak console or by a brokered identity provider, I want to be able to borrow without a separate registration step.
+Design: [ADR-001](../../decisions/ADR-001-borrower-provisioning.md).
+- On the first authenticated call that needs a Borrower (`me`, borrow, return), if none exists for the token's `sub`, one is created from the token claims `given_name`, `family_name`, `email`. Fallbacks: `preferred_username` for a missing name; a missing email is allowed. Mobile stays empty.
+- Idempotent under concurrent first calls: unique `keycloakUserId`, insert in its own transaction, on a duplicate-key error re-read the row.
+- Linked by `sub` only. An older Borrower row with the same email and no `keycloakUserId` is linked only when the token has `email_verified=true`; otherwise the call answers 409.
+- Only users with role `user` get a Borrower (depends on E01). Later tokens never overwrite the stored profile.
+- Document the Keycloak setup per IdP (name and email mappers, "trust email", `profile` and `email` scopes) in `docs/setup/`.
+- Tested with mocked JWTs only; no real Keycloak.
 
 ## Implementation notes
 Status: US-02.1–02.3 merged to `master` in [PR #11](https://github.com/tharangage/simple-library/pull/11) and tested against a real Keycloak. US-02.4 is still open.
