@@ -49,6 +49,23 @@ describe('RegisterPage', () => {
     vi.mocked(registerUser).mockReset()
   })
 
+  it('has the two-panel layout from the design: brand panel (linking home) and the form', () => {
+    renderPage()
+
+    expect(screen.getByRole('link', { name: 'Simple Library' })).toHaveAttribute('href', '/')
+    expect(screen.getByText('Your library, always open.')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Create your account' })).toBeInTheDocument()
+    expect(screen.getByText('Self-register as a library borrower.')).toBeInTheDocument()
+  })
+
+  it('offers a sign-in for people who already have an account', async () => {
+    renderPage()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    expect(mockAuth.signinRedirect).toHaveBeenCalled()
+  })
+
   it('shows every field with its label and the mobile hint', () => {
     renderPage()
 
@@ -107,9 +124,10 @@ describe('RegisterPage', () => {
     })
     expect(submitButton()).toBeDisabled()
 
-    finish({ id: '1' })
+    finish({ id: '1', firstName: 'Ann' })
     expect(await screen.findByRole('heading', { name: 'Account created' })).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Log in' }))
+    expect(screen.getByRole('status')).toHaveTextContent('Welcome, Ann! You can now sign in with your email.')
+    await userEvent.click(screen.getByRole('button', { name: 'Go to sign in' }))
     expect(mockAuth.signinRedirect).toHaveBeenCalled()
   })
 
@@ -122,7 +140,7 @@ describe('RegisterPage', () => {
 
     const alert = await screen.findByRole('alert')
     expect(alert).toHaveTextContent('This email is already registered.')
-    await userEvent.click(within(alert).getByRole('button', { name: 'Log in' }))
+    await userEvent.click(within(alert).getByRole('button', { name: 'Sign in' }))
     expect(mockAuth.signinRedirect).toHaveBeenCalled()
     expect(submitButton()).toBeEnabled() // they can correct the email and retry
   })

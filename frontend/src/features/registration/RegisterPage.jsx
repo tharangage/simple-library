@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
 import { useAuth } from 'react-oidc-context'
-import { Navigate } from 'react-router'
+import { Link, Navigate } from 'react-router'
 import { registerUser } from '../../api/registrations.js'
 import { TextField } from '../../components/TextField.jsx'
 import { validateRegistration } from './validateRegistration.js'
@@ -26,14 +26,22 @@ export function RegisterPage() {
   if (auth.isAuthenticated) return <Navigate to="/books" replace />
 
   if (registration.isSuccess) {
+    const firstName = registration.data?.firstName
     return (
-      <section className="auth-card" aria-labelledby="registered-title">
-        <h1 id="registered-title">Account created</h1>
-        <p role="status">Your account is ready. Log in to start borrowing books.</p>
-        <button type="button" className="button--primary" onClick={() => auth.signinRedirect()}>
-          Log in
-        </button>
-      </section>
+      <AuthLayout>
+        <section className="auth-form auth-form--centered" aria-labelledby="registered-title">
+          <div className="auth-success-icon" aria-hidden="true">
+            ✓
+          </div>
+          <h1 id="registered-title">Account created</h1>
+          <p role="status" className="auth-subtitle">
+            {firstName ? `Welcome, ${firstName}! ` : ''}You can now sign in with your email.
+          </p>
+          <button type="button" className="button--primary auth-button" onClick={() => auth.signinRedirect()}>
+            Go to sign in
+          </button>
+        </section>
+      </AuthLayout>
     )
   }
 
@@ -79,54 +87,81 @@ export function RegisterPage() {
   const failureMessage = error && !emailTaken && !hasFieldErrors(error) ? describeFailure(error) : null
 
   return (
-    <section className="auth-card" aria-labelledby="register-title">
-      <h1 id="register-title">Create your account</h1>
-      <p className="muted">Register as a library borrower.</p>
+    <AuthLayout>
+      <section className="auth-form" aria-labelledby="register-title">
+        <h1 id="register-title">Create your account</h1>
+        <p className="auth-subtitle">Self-register as a library borrower.</p>
 
-      {emailTaken && (
-        <p role="alert" className="message message--error">
-          This email is already registered.{' '}
-          <button type="button" className="link-button" onClick={() => auth.signinRedirect()}>
-            Log in
+        {emailTaken && (
+          <p role="alert" className="message message--error">
+            This email is already registered.{' '}
+            <button type="button" className="link-button" onClick={() => auth.signinRedirect()}>
+              Sign in
+            </button>
+          </p>
+        )}
+        {failureMessage && (
+          <p role="alert" className="message message--error">
+            {failureMessage}
+          </p>
+        )}
+
+        <form ref={formRef} onSubmit={submit} noValidate className="form">
+          <div className="form__row">
+            {field('firstName', 'First name', { autoComplete: 'given-name', placeholder: 'Jane' })}
+            {field('lastName', 'Last name', { autoComplete: 'family-name', placeholder: 'Doe' })}
+          </div>
+          {field('email', 'Email', { type: 'email', autoComplete: 'email', placeholder: 'you@example.com' })}
+          {field('mobile', 'Mobile number', {
+            type: 'tel',
+            autoComplete: 'tel',
+            placeholder: '+14155550100',
+            hint: 'Start with + and your country code, e.g. +14155550100',
+          })}
+          {field('password', 'Password', {
+            type: 'password',
+            autoComplete: 'new-password',
+            placeholder: 'At least 8 characters',
+          })}
+          {field('confirmPassword', 'Confirm password', {
+            type: 'password',
+            autoComplete: 'new-password',
+            placeholder: 'Repeat your password',
+          })}
+          <button type="submit" className="button--primary auth-button" disabled={registration.isPending}>
+            {registration.isPending ? 'Creating account…' : 'Create account'}
+          </button>
+        </form>
+
+        <p className="auth-footer">
+          Already have an account?{' '}
+          <button type="button" className="link-button auth-footer__link" onClick={() => auth.signinRedirect()}>
+            Sign in
           </button>
         </p>
-      )}
-      {failureMessage && (
-        <p role="alert" className="message message--error">
-          {failureMessage}
+      </section>
+    </AuthLayout>
+  )
+}
+
+/**
+ * The two-panel frame from the Figma design: a brand panel on the left and the form on the right.
+ * Registration is shown full-screen (no app header), as in the design, so the brand name links home.
+ */
+function AuthLayout({ children }) {
+  return (
+    <div className="auth-layout">
+      <aside className="auth-brand">
+        <Link to="/" className="auth-brand__name">
+          Simple Library
+        </Link>
+        <p className="auth-brand__headline">Your library, always open.</p>
+        <p className="auth-brand__text">
+          Register as a borrower to browse books, borrow copies and return them from anywhere.
         </p>
-      )}
-
-      <form ref={formRef} onSubmit={submit} noValidate className="form">
-        <div className="form__row">
-          {field('firstName', 'First name', { autoComplete: 'given-name' })}
-          {field('lastName', 'Last name', { autoComplete: 'family-name' })}
-        </div>
-        {field('email', 'Email', { type: 'email', autoComplete: 'email' })}
-        {field('mobile', 'Mobile number', {
-          type: 'tel',
-          autoComplete: 'tel',
-          placeholder: '+14155550100',
-          hint: 'Start with + and your country code, e.g. +14155550100',
-        })}
-        {field('password', 'Password', {
-          type: 'password',
-          autoComplete: 'new-password',
-          hint: 'At least 8 characters',
-        })}
-        {field('confirmPassword', 'Confirm password', { type: 'password', autoComplete: 'new-password' })}
-        <button type="submit" className="button--primary" disabled={registration.isPending}>
-          {registration.isPending ? 'Creating account…' : 'Create account'}
-        </button>
-      </form>
-
-      <p className="muted">
-        Already have an account?{' '}
-        <button type="button" className="link-button" onClick={() => auth.signinRedirect()}>
-          Log in
-        </button>
-      </p>
-    </section>
+      </aside>
+      <main className="auth-main">{children}</main>
+    </div>
   )
 }
 
