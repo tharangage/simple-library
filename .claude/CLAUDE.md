@@ -65,8 +65,10 @@ The body for 404/409/500 is the plain message string.
   Role rules exist **only** for `GET /apis/v1/borrowers/me` (`user`), `GET /apis/v1/me` and `POST .../borrowers/{id}/books` (`user` or `admin`) and
   `DELETE .../borrowers/{id}/books/{book-id}` (`admin`); a token without the role → 403. Tests use
   `jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))`. All other endpoints (books, borrowers) still just need a valid token (E01 adds the rest).
-- Borrower provisioning (US-02.4): `BorrowerProvisioningInterceptor` (registered in `WebConfig` for `/me` and borrow only; `GET /borrowers/me` calls the service itself)
-  creates the Borrower for every caller with `ROLE_USER`. Borrow checks it:
+- Caller context: `CurrentUserInterceptor` (all `/apis/**`) puts the token details (`CurrentUser`: `Jwt`, authorities, `isUser()`/`isAdmin()`) into a `ThreadLocal`
+  (`CurrentUserHolder.get()`/`require()`) and clears it after the request. Empty when the request has no token. Use it instead of reading the security context in controllers.
+- Borrower provisioning (US-02.4): `BorrowerProvisioningInterceptor` (registered in `WebConfig` for `/me` and borrow only, after `CurrentUserInterceptor`; `GET /borrowers/me` calls the service itself)
+  creates the Borrower for every caller with `ROLE_USER`; it does not pass the Borrower on. Borrow checks it:
   an admin may use any borrower id in the path (library desk), everybody else only their own (else 403); an admin without `user` gets no Borrower.
   Return is admin-only and does not provision.
 - `issuer-uri` = `${app.keycloak.public-url}/realms/${app.keycloak.realm}` (default `http://localhost:8080/realms/library`).

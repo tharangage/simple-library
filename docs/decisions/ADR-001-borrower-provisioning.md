@@ -88,7 +88,8 @@ Decisions taken while implementing, after the first design above. They replace t
 
 **Where it runs**
 - `BorrowerProvisioningInterceptor` (a Spring `HandlerInterceptor`, registered in `WebConfig`) calls `getOrCreate` for `/apis/v1/me` and borrow only. An interceptor runs after Spring Security, can be limited to paths, and its exceptions still reach the `@ControllerAdvice`. Return is not included. It is not applied to every API: that would add a database lookup to every call and let a provisioning failure (such as a 409) block unrelated endpoints such as the book list.
-- `GET /apis/v1/borrowers/me` calls the service directly because it must return the Borrower. The interceptor does not pass the Borrower on to controllers (no request attribute), since nothing else needs it.
+- `GET /apis/v1/borrowers/me` calls the service directly because it must return the Borrower. The provisioning interceptor does not pass the Borrower on to controllers; it only makes sure it exists.
+- A separate `CurrentUserInterceptor` (all `/apis/**`) stores the caller's token details (`CurrentUser`: the `Jwt` and its authorities) in a `ThreadLocal` (`CurrentUserHolder`) and clears it after the request. Controllers read the caller from there. The borrow check uses it: a non-admin's own Borrower is looked up with `getOrCreate(caller.jwt())` and compared with the borrower id in the path.
 
 **Changes to the first design**
 - An email that is not verified (`email_verified` not true) is **not stored** on a new Borrower, so a claimed address cannot occupy the unique email slot and lock out its real owner. Linking an older Borrower by email still needs `email_verified=true` (rule 5).
