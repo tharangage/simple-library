@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from 'react-oidc-context'
 import { Link } from 'react-router'
 import { createBook } from '../../api/books.js'
@@ -19,6 +19,9 @@ export function AddBookPage() {
   const token = auth.user?.access_token
   const queryClient = useQueryClient()
   const formRef = useRef(null)
+  const anotherCopyRef = useRef(null)
+  const sending = useRef(false) // set at once, unlike isPending which changes only after the next render
+  const copiesInARow = useRef({ isbn: null, copies: 0 })
   const [values, setValues] = useState(EMPTY)
   const [touched, setTouched] = useState({})
   const [submitted, setSubmitted] = useState(false)
@@ -28,15 +31,28 @@ export function AddBookPage() {
   const create = useMutation({
     mutationFn: (book) => createBook({ token, ...book }),
     onSuccess: (_created, book) => {
-      setAdded((previous) => ({
-        title: book.title,
-        copies: previous && previous.isbn === book.isbn ? previous.copies + 1 : 1,
-        isbn: book.isbn,
-      }))
+      const previous = copiesInARow.current
+      const copies = previous.isbn === book.isbn ? previous.copies + 1 : 1
+      copiesInARow.current = { isbn: book.isbn, copies }
+      setAdded({ title: book.title, copies })
       queryClient.invalidateQueries({ queryKey: ['books'] })
     },
-    onError: (error) => setServerErrors(error.fieldErrors ?? {}),
+    onError: (error) => {
+      const fieldErrors = error.fieldErrors ?? {}
+      setServerErrors(fieldErrors)
+      // Take a keyboard or screen-reader user to the first field the server complained about.
+      const firstInvalid = FIELD_ORDER.find((name) => fieldErrors[name])
+      if (firstInvalid) formRef.current?.elements[firstInvalid]?.focus()
+    },
+    onSettled: () => {
+      sending.current = false
+    },
   })
+
+  // After a success the next likely step is another copy, so focus its button (it appears with the status line).
+  useEffect(() => {
+    if (added) anotherCopyRef.current?.focus()
+  }, [added])
 
   const clientErrors = validateBook(values)
   const errors = { ...serverErrors, ...clientErrors }
@@ -50,7 +66,10 @@ export function AddBookPage() {
   const blur = (name) => () => setTouched((current) => ({ ...current, [name]: true }))
 
   const send = (book) => {
+    if (sending.current) return // a second click or Enter in the same moment would create a second copy
+    sending.current = true
     setServerErrors({})
+    setAdded(null) // a failed attempt must not sit next to the old "was added" line
     create.reset()
     create.mutate(book)
   }
@@ -73,6 +92,7 @@ export function AddBookPage() {
     setTouched({})
     setSubmitted(false)
     setAdded(null)
+    copiesInARow.current = { isbn: null, copies: 0 }
     create.reset()
     formRef.current.elements.isbn.focus()
   }
@@ -98,21 +118,24 @@ export function AddBookPage() {
       <h1 id="add-book-title">Add a book</h1>
       <p className="auth-subtitle">Register one copy. Use the same ISBN, title and author for more copies.</p>
 
-      {added && (
-        <div role="status" className="message message--success">
-          <p>
+      {/* Always in the page, so screen readers announce the text when it appears. Only text goes inside. */}
+      <div role="status" className="status-line">
+        {added && (
+          <p className="message message--success">
             “{added.title}” was added{added.copies > 1 ? ` (${added.copies} copies in a row)` : ''}.
           </p>
-          <p className="form__actions">
-            <button type="button" onClick={addAnotherCopy} disabled={create.isPending}>
-              Add another copy
-            </button>
-            <button type="button" onClick={startOver}>
-              Add a different book
-            </button>
-            <Link to="/books">Back to books</Link>
-          </p>
-        </div>
+        )}
+      </div>
+      {added && (
+        <p className="form__actions">
+          <button type="button" ref={anotherCopyRef} onClick={addAnotherCopy}>
+            Add another copy
+          </button>
+          <button type="button" onClick={startOver}>
+            Add a different book
+          </button>
+          <Link to="/books">Back to books</Link>
+        </p>
       )}
       {failureMessage && (
         <p role="alert" className="message message--error">
@@ -124,7 +147,8 @@ export function AddBookPage() {
         {field('isbn', 'ISBN', { placeholder: '978-3-16-148410-0', hint: 'ISBN-10 or ISBN-13, hyphens allowed' })}
         {field('title', 'Title', { placeholder: 'The title of the book' })}
         {field('author', 'Author', { placeholder: 'Full name' })}
-        <button type="submit" className="button--primary auth-button" disabled={create.isPending}>
+        {/* aria-disabled instead of disabled: the button keeps keyboard focus while the book is being sent. */}
+        <button type="submit" className="button--primary auth-button" aria-disabled={create.isPending}>
           {create.isPending ? 'Adding…' : 'Add book'}
         </button>
       </form>

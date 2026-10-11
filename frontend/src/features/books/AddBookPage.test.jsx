@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -103,7 +103,7 @@ describe('AddBookPage', () => {
 
     expect(screen.getByLabelText('ISBN')).toHaveValue('')
     expect(screen.getByLabelText('ISBN')).toHaveFocus()
-    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.getByRole('status')).toBeEmptyDOMElement()
   })
 
   it('shows the API message for an ISBN that exists with another title or author', async () => {
@@ -152,6 +152,78 @@ describe('AddBookPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Add book' }))
 
-    expect(await screen.findByRole('button', { name: 'Adding…' })).toBeDisabled()
+    const button = await screen.findByRole('button', { name: 'Adding…' })
+    expect(button).toHaveAttribute('aria-disabled', 'true')
+    expect(button).toHaveFocus() // the button keeps focus while sending
+  })
+
+  it('keeps the status region in the page before any message, with only text inside', async () => {
+    vi.mocked(createBook).mockResolvedValue({ id: 'bk-1' })
+    const user = userEvent.setup()
+    renderPage()
+    expect(screen.getByRole('status')).toBeEmptyDOMElement()
+
+    await fill(user)
+    await user.click(screen.getByRole('button', { name: 'Add book' }))
+
+    const status = await screen.findByText(/was added/)
+    expect(status.closest('[role="status"]')).not.toBeNull()
+    expect(screen.getByRole('status')).not.toContainElement(screen.getByRole('button', { name: 'Add another copy' }))
+  })
+
+  it('moves focus to Add another copy after a success', async () => {
+    vi.mocked(createBook).mockResolvedValue({ id: 'bk-1' })
+    const user = userEvent.setup()
+    renderPage()
+    await fill(user)
+
+    await user.click(screen.getByRole('button', { name: 'Add book' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add another copy' })).toHaveFocus())
+  })
+
+  it('removes the success line when adding another copy fails', async () => {
+    vi.mocked(createBook)
+      .mockResolvedValueOnce({ id: 'bk-1' })
+      .mockRejectedValueOnce(new ApiError(500, 'boom'))
+    const user = userEvent.setup()
+    renderPage()
+    await fill(user)
+    await user.click(screen.getByRole('button', { name: 'Add book' }))
+
+    await user.click(await screen.findByRole('button', { name: 'Add another copy' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Something went wrong on our side')
+    expect(screen.queryByText(/was added/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Add another copy' })).not.toBeInTheDocument()
+  })
+
+  it('focuses the first field the server complained about', async () => {
+    vi.mocked(createBook).mockRejectedValue(
+      new ApiError(400, 'Some fields are invalid.', { title: 'Title must be between 1 and 254 characters' }),
+    )
+    const user = userEvent.setup()
+    renderPage()
+    await fill(user)
+
+    await user.click(screen.getByRole('button', { name: 'Add book' }))
+
+    await waitFor(() => expect(screen.getByLabelText('Title')).toHaveFocus())
+    expect(screen.getByLabelText('Title')).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByLabelText('Title')).toHaveAccessibleDescription(/between 1 and 254/)
+  })
+
+  it('sends only one request when the form is submitted twice in the same moment', async () => {
+    vi.mocked(createBook).mockReturnValue(new Promise(() => {}))
+    const user = userEvent.setup()
+    renderPage()
+    await fill(user)
+
+    // Two Enter presses before React has re-rendered.
+    const form = screen.getByLabelText('Author').closest('form')
+    fireEvent.submit(form)
+    fireEvent.submit(form)
+
+    await waitFor(() => expect(createBook).toHaveBeenCalledTimes(1))
   })
 })

@@ -27,6 +27,11 @@ class CurrentUserTest {
     }
 
     @Test
+    void roles_onlyUnrelatedKeycloakRoles_isEmpty() {
+        assertThat(user("ROLE_OFFLINE_ACCESS", "ROLE_UMA_AUTHORIZATION").roles()).isEmpty();
+    }
+
+    @Test
     void roles_none_isEmpty() {
         assertThat(user("SCOPE_read").roles()).isEmpty();
     }

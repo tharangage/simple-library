@@ -211,3 +211,5 @@ button[aria-disabled='true'] { opacity: 0.5; cursor: not-allowed; }
 .message--success p { margin: 0 0 0.5rem; }
 .form__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin: 0; }
 .topbar nav { display: flex; gap: 1rem; }
+.status-line:empty { display: none; }
+.status-line .message { margin: 0; }

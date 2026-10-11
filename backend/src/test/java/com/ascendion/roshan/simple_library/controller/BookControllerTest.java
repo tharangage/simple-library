@@ -70,6 +70,13 @@ public class BookControllerTest {
     }
 
     @Test
+    void registerBook_trailingSlashAsPlainUser_isNotCreated() throws Exception {
+        mockMvc.perform(post("/apis/v1/books/").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                        .contentType(MediaType.APPLICATION_JSON).content(VALID_BOOK))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
     void registerBook_tokenWithoutAnyRole_returns403() throws Exception {
         mockMvc.perform(post("/apis/v1/books").with(jwt())
                         .contentType(MediaType.APPLICATION_JSON).content(VALID_BOOK))
