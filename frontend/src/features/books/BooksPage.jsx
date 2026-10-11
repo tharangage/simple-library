@@ -42,7 +42,7 @@ export function BooksPage() {
   })
 
   // The user's Borrower and item counts. Without a Borrower (admin only, or still loading) there are no Borrow buttons.
-  const { data: borrower } = useCurrentUser()
+  const borrower = useCurrentUser().data?.borrower
   const borrow = useBorrowBook()
   const [bookToBorrow, setBookToBorrow] = useState(null)
   const headingRef = useRef(null)

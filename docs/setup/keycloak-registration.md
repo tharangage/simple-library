@@ -60,7 +60,7 @@ Then log in to the web app with that email and password.
 
 ## Users created in the Keycloak console or by an identity provider (US-02.4)
 
-These users have no Borrower yet. The backend creates it on their first call to `GET /apis/v1/borrowers/me` (the web app makes it right after login), `GET /apis/v1/me`, borrow or
+These users have no Borrower yet. The backend creates it on their first call to `GET /apis/v1/me` (the web app makes it right after login), borrow or
 return (see [ADR-001](../decisions/ADR-001-borrower-provisioning.md)). It reads `given_name`, `family_name` and
 `email` from the token, so per identity provider (and for console users) check:
 

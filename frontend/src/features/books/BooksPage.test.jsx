@@ -5,7 +5,8 @@ import { MemoryRouter, useLocation } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/client.js'
 import { fetchBooks } from '../../api/books.js'
-import { borrowBook, fetchMyBorrower } from '../../api/borrowers.js'
+import { borrowBook } from '../../api/borrowers.js'
+import { fetchMe } from '../../api/me.js'
 import { ToastProvider } from '../../components/Toast.jsx'
 import { BooksPage } from './BooksPage.jsx'
 
@@ -15,7 +16,8 @@ vi.mock('react-oidc-context', () => ({
   useAuth: () => ({ user: { access_token: 'test-token' }, signinRedirect }),
 }))
 vi.mock('../../api/books.js', () => ({ fetchBooks: vi.fn() }))
-vi.mock('../../api/borrowers.js', () => ({ fetchMyBorrower: vi.fn(), borrowBook: vi.fn() }))
+vi.mock('../../api/borrowers.js', () => ({ borrowBook: vi.fn() }))
+vi.mock('../../api/me.js', () => ({ fetchMe: vi.fn() }))
 
 const page = (items, overrides = {}) => ({
   items,
@@ -51,11 +53,11 @@ function renderPage(url = '/books') {
 describe('BooksPage', () => {
   beforeEach(() => {
     vi.mocked(fetchBooks).mockReset()
-    vi.mocked(fetchMyBorrower).mockReset()
+    vi.mocked(fetchMe).mockReset()
     vi.mocked(borrowBook).mockReset()
     signinRedirect.mockReset()
-    // Default: an admin without a borrower record, so no Borrow buttons. Borrow tests override this.
-    vi.mocked(fetchMyBorrower).mockRejectedValue(new ApiError(403, 'Access denied'))
+    // Default: a desk-only admin (no borrower section), so no Borrow buttons. Borrow tests override this.
+    vi.mocked(fetchMe).mockResolvedValue(adminOnly)
   })
 
   it('lists books with their status', async () => {
@@ -156,15 +158,19 @@ describe('BooksPage', () => {
   })
 })
 
-const borrower = (overrides = {}) => ({ id: 'b-1', borrowedCount: 1, maxItems: 3, remainingSlots: 2, ...overrides })
+const adminOnly = { userId: 'u-admin', borrower: null }
+const borrower = (overrides = {}) => ({
+  userId: 'u-1',
+  borrower: { id: 'b-1', borrowedCount: 1, maxItems: 3, remainingSlots: 2, ...overrides },
+})
 
 describe('BooksPage borrowing', () => {
   beforeEach(() => {
     vi.mocked(fetchBooks).mockReset()
-    vi.mocked(fetchMyBorrower).mockReset()
+    vi.mocked(fetchMe).mockReset()
     vi.mocked(borrowBook).mockReset()
     vi.mocked(fetchBooks).mockResolvedValue(page([book('1', 'Dune'), book('2', 'Emma', true)]))
-    vi.mocked(fetchMyBorrower).mockResolvedValue(borrower())
+    vi.mocked(fetchMe).mockResolvedValue(borrower())
     vi.mocked(borrowBook).mockResolvedValue(null)
   })
 
@@ -176,7 +182,7 @@ describe('BooksPage borrowing', () => {
   })
 
   it('shows no Borrow buttons to a user without a borrower record (admin only)', async () => {
-    vi.mocked(fetchMyBorrower).mockRejectedValue(new ApiError(403, 'Access denied'))
+    vi.mocked(fetchMe).mockResolvedValue(adminOnly)
     renderPage()
 
     await screen.findByText('Dune')
@@ -203,7 +209,7 @@ describe('BooksPage borrowing', () => {
     renderPage()
     await user.click(await screen.findByRole('button', { name: 'Borrow Dune' }))
     const booksCalls = vi.mocked(fetchBooks).mock.calls.length
-    const userCalls = vi.mocked(fetchMyBorrower).mock.calls.length
+    const userCalls = vi.mocked(fetchMe).mock.calls.length
 
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Borrow' }))
 
@@ -211,11 +217,11 @@ describe('BooksPage borrowing', () => {
     expect(await screen.findByText(/is yours/)).toHaveTextContent('Dune')
     expect(screen.getByRole('heading', { name: 'Books' })).toHaveFocus()
     await waitFor(() => expect(vi.mocked(fetchBooks).mock.calls.length).toBeGreaterThan(booksCalls))
-    await waitFor(() => expect(vi.mocked(fetchMyBorrower).mock.calls.length).toBeGreaterThan(userCalls))
+    await waitFor(() => expect(vi.mocked(fetchMe).mock.calls.length).toBeGreaterThan(userCalls))
   })
 
   it('disables Borrow with an explanation when the user is at the limit', async () => {
-    vi.mocked(fetchMyBorrower).mockResolvedValue(borrower({ borrowedCount: 3, remainingSlots: 0 }))
+    vi.mocked(fetchMe).mockResolvedValue(borrower({ borrowedCount: 3, remainingSlots: 0 }))
     const user = userEvent.setup()
     renderPage()
 
