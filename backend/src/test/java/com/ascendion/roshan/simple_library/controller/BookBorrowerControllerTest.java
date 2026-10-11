@@ -4,6 +4,7 @@ import com.ascendion.roshan.simple_library.config.SecurityConfig;
 import com.ascendion.roshan.simple_library.dto.BorrowBookRequest;
 import com.ascendion.roshan.simple_library.exception.NotFoundException;
 import com.ascendion.roshan.simple_library.service.BookBorrowerService;
+import com.ascendion.roshan.simple_library.service.BorrowerProvisioningService;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +51,9 @@ class BookBorrowerControllerTest {
 
     @MockitoBean
     private BookBorrowerService bookBorrowerService;
+
+    @MockitoBean
+    private BorrowerProvisioningService provisioningService;
 
     @MockitoBean
     private JpaMetamodelMappingContext jpaMetamodelMappingContext;

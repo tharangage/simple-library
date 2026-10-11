@@ -30,7 +30,7 @@ As a visitor, I want a sign-up form, so that I can create an account without con
 - On success: confirmation message, then a "Log in" button that starts the OIDC login (US-07.2).
 - Accessible: labels, error text linked with `aria-describedby`, keyboard-only flow works.
 
-### US-02.4 Borrower created on first sign-in (console and brokered IdP users) (BE · S) · [SCRUM-24](https://tharangage.atlassian.net/browse/SCRUM-24) – *not started*
+### US-02.4 Borrower created on first sign-in (console and brokered IdP users) (BE · S) · [SCRUM-24](https://tharangage.atlassian.net/browse/SCRUM-24) – *implemented* (role check waits on E01)
 As a user whose Keycloak account was created in the Keycloak console or by a brokered identity provider, I want to be able to borrow without a separate registration step.
 Design: [ADR-001](../../decisions/ADR-001-borrower-provisioning.md).
 - On the first authenticated call that needs a Borrower (`me`, borrow, return), if none exists for the token's `sub`, one is created from the token claims `given_name`, `family_name`, `email`. Fallbacks: `preferred_username` for a missing name; a missing email is allowed. Mobile stays empty.
@@ -41,7 +41,7 @@ Design: [ADR-001](../../decisions/ADR-001-borrower-provisioning.md).
 - Tested with mocked JWTs only; no real Keycloak.
 
 ## Implementation notes
-Status: US-02.1–02.3 merged to `master` in [PR #11](https://github.com/tharangage/simple-library/pull/11) and tested against a real Keycloak. US-02.4 is still open.
+Status: US-02.1–02.3 merged to `master` in [PR #11](https://github.com/tharangage/simple-library/pull/11) and tested against a real Keycloak. US-02.4 is implemented: `BorrowerProvisioningService`, minimal `GET /apis/v1/me`, and borrow/return call it first. The role `user` check is a TODO until E01.
 
 Keycloak setup: [`docs/setup/keycloak-registration.md`](../../setup/keycloak-registration.md).
 - `Borrower` also got a unique, nullable `keycloakUserId` (US-01.x will make it required for new rows).

@@ -1,6 +1,6 @@
 # ADR-001 – Create the Borrower on a user's first sign-in
 
-- **Status:** Accepted (design agreed in discussion, not implemented yet)
+- **Status:** Accepted (implemented in US-02.4; role check waits on E01)
 - **Date:** 2026-10-11
 - **Decision ID:** D-11
 - **Affects:** US-02.4 ([SCRUM-24](https://tharangage.atlassian.net/browse/SCRUM-24)), E01 (roles, `me` endpoint)
