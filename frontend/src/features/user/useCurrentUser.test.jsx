@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/client.js'
 import { fetchMyBorrower } from '../../api/borrowers.js'
 import { createMockAuth, loggedInUser } from '../../test/mockAuth.js'
-import { useMyBorrower } from './useMyBorrower.js'
+import { useCurrentUser } from './useCurrentUser.js'
 
 let mockAuth
 vi.mock('react-oidc-context', () => ({ useAuth: () => mockAuth }))
@@ -24,10 +24,10 @@ const sharedClientWrapper = () => {
 
 afterEach(() => vi.restoreAllMocks())
 
-describe('useMyBorrower', () => {
+describe('useCurrentUser', () => {
   it('does nothing while the user is not logged in', () => {
     mockAuth = createMockAuth()
-    renderHook(() => useMyBorrower(), { wrapper })
+    renderHook(() => useCurrentUser(), { wrapper })
     expect(fetchMyBorrower).not.toHaveBeenCalled()
   })
 
@@ -36,7 +36,7 @@ describe('useMyBorrower', () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => {})
     vi.mocked(fetchMyBorrower).mockResolvedValue({ id: 'b-1', firstname: 'Ada' })
 
-    renderHook(() => useMyBorrower(), { wrapper })
+    renderHook(() => useCurrentUser(), { wrapper })
 
     await waitFor(() => expect(log).toHaveBeenCalledWith(expect.stringContaining('/borrowers/me'), { id: 'b-1', firstname: 'Ada' }))
     expect(fetchMyBorrower).toHaveBeenCalledWith({ token: 'test-token' })
@@ -46,7 +46,7 @@ describe('useMyBorrower', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {})
     vi.mocked(fetchMyBorrower).mockResolvedValue({ id: 'b-1' })
     mockAuth = createMockAuth({ isAuthenticated: true, user: { ...loggedInUser, profile: { sub: 'u-1' } } })
-    const { rerender } = renderHook(() => useMyBorrower(), { wrapper: sharedClientWrapper() })
+    const { rerender } = renderHook(() => useCurrentUser(), { wrapper: sharedClientWrapper() })
     await waitFor(() => expect(fetchMyBorrower).toHaveBeenCalledTimes(1))
 
     mockAuth = createMockAuth({ isAuthenticated: true, user: { ...loggedInUser, profile: { sub: 'u-2' } } })
@@ -60,7 +60,7 @@ describe('useMyBorrower', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     vi.mocked(fetchMyBorrower).mockRejectedValue(new ApiError(403, 'Access denied'))
 
-    renderHook(() => useMyBorrower(), { wrapper })
+    renderHook(() => useCurrentUser(), { wrapper })
 
     await waitFor(() => expect(warn).toHaveBeenCalledWith(expect.stringContaining('403')))
   })

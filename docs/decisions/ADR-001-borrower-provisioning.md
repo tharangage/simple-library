@@ -98,7 +98,7 @@ Decisions taken while implementing, after the first design above. They replace t
 - `AccessDeniedException` is mapped to 403 in `CustomResponseEntityExceptionHandler`.
 
 **Web app**
-- After login the app calls `GET /apis/v1/borrowers/me` (hook `useMyBorrower`, mounted in `Layout`) and for now only logs the result to the browser console. Later pages can read the same cached query to fill the screens. An admin without role `user` gets 403, which is logged as a warning.
+- After login the app calls `GET /apis/v1/borrowers/me` (hook `useCurrentUser`, mounted in `Layout`) and for now only logs the result to the browser console. Later pages can read the same cached query to fill the screens. An admin without role `user` gets 403, which is logged as a warning.
 
 **Known gaps**
 - `GET /apis/v1/me` shows only the token profile but, for role `user`, provisions first. A provisioning failure (409: unverified email matching an older Borrower, or a token with no name and no email) therefore also fails `/me` and borrow for that user. Accepted so a problem is seen at the first call.

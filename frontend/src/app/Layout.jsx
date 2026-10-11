@@ -1,11 +1,11 @@
 import { useAuth } from 'react-oidc-context'
 import { Link, NavLink, Outlet } from 'react-router'
-import { useMyBorrower } from '../features/borrower/useMyBorrower.js'
+import { useCurrentUser } from '../features/user/useCurrentUser.js'
 
 /** The frame around every page: header with navigation and the login/logout button. */
 export function Layout() {
   const auth = useAuth()
-  useMyBorrower() // after login: fetch (and thereby create) the user's Borrower; logged to the console for now
+  useCurrentUser() // after login: load the current user (this also creates their Borrower on the backend); logged to the console for now
   const profile = auth.user?.profile
   const displayName = profile?.given_name || profile?.preferred_username
 
