@@ -3,7 +3,12 @@ package com.ascendion.roshan.simple_library.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -13,7 +18,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * Stateless resource server: every API call needs a Keycloak-issued bearer token.
@@ -22,6 +30,8 @@ import java.util.List;
  */
 @Configuration
 public class SecurityConfig {
+
+    public static final String ROLE_USER = "ROLE_USER";
 
     @Bean
     public SecurityFilterChain securityFilterChain(final HttpSecurity http) throws Exception {
@@ -36,9 +46,32 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Self-registration: a visitor has no account, so no token yet.
                         .requestMatchers(HttpMethod.POST, "/apis/v1/registrations").permitAll()
+                        // Returning a book is a library-desk action: users cannot return books themselves.
+                        .requestMatchers(HttpMethod.DELETE, "/apis/v1/borrowers/*/books/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/apis/v1/borrowers/*/books").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/apis/v1/borrowers/me").hasRole("USER")
+                        .requestMatchers("/apis/v1/me", "/apis/v1/me/**").hasAnyRole("USER", "ADMIN")
                         .anyRequest().authenticated())
-                .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()));
+                .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
         return http.build();
+    }
+
+    /** Maps the Keycloak realm roles in {@code realm_access.roles} to {@code ROLE_USER} / {@code ROLE_ADMIN}. */
+    @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+        final Converter<Jwt, Collection<GrantedAuthority>> roles = jwt -> {
+            final Object realmAccess = jwt.getClaim("realm_access");
+            if (realmAccess instanceof Map<?, ?> map && map.get("roles") instanceof Collection<?> names) {
+                return names.stream()
+                        .map(name -> (GrantedAuthority) new SimpleGrantedAuthority(
+                                "ROLE_" + String.valueOf(name).toUpperCase(Locale.ROOT)))
+                        .toList();
+            }
+            return List.of();
+        };
+        final JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(roles);
+        return converter;
     }
 
     /**

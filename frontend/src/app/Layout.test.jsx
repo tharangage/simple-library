@@ -7,6 +7,7 @@ import { Layout } from './Layout.jsx'
 
 let mockAuth
 vi.mock('react-oidc-context', () => ({ useAuth: () => mockAuth }))
+vi.mock('../features/borrower/useMyBorrower.js', () => ({ useMyBorrower: vi.fn() }))
 
 const renderLayout = () =>
   render(

@@ -55,12 +55,12 @@ Then log in to the web app with that email and password.
 
 ## Not covered yet
 - `Location: /apis/v1/me` points to an endpoint that does not exist until E01 (US-01.4).
-- Tokens are not yet required to carry `aud=library-backend` (E01), and there are still no role checks.
+- Tokens are not yet required to carry `aud=library-backend` (E01), and role rules exist only for `/me`, borrow and return (see US-02.4 notes); the other endpoints have none yet.
 - Email verification (`emailVerified=false`) is not enforced. Rate limiting belongs at the ingress / reverse proxy.
 
 ## Users created in the Keycloak console or by an identity provider (US-02.4)
 
-These users have no Borrower yet. The backend creates it on their first call to `GET /apis/v1/me`, borrow or
+These users have no Borrower yet. The backend creates it on their first call to `GET /apis/v1/borrowers/me` (the web app makes it right after login), `GET /apis/v1/me`, borrow or
 return (see [ADR-001](../decisions/ADR-001-borrower-provisioning.md)). It reads `given_name`, `family_name` and
 `email` from the token, so per identity provider (and for console users) check:
 

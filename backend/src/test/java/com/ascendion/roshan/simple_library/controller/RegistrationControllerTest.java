@@ -47,6 +47,9 @@ class RegistrationControllerTest {
     @MockitoBean
     private JwtDecoder jwtDecoder;
 
+    @MockitoBean
+    private com.ascendion.roshan.simple_library.service.BorrowerProvisioningService provisioningService;
+
     @Test
     void register_validRequestWithoutToken_returns201WithLocationAndNoSecrets() throws Exception {
         final Borrower saved = new Borrower();

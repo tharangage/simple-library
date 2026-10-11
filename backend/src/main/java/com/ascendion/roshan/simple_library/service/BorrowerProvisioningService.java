@@ -29,7 +29,7 @@ public class BorrowerProvisioningService {
         this.inserter = inserter;
     }
 
-    // TODO(E01): only users with the role "user" get a Borrower; until roles exist every authenticated user qualifies.
+    /** Callers are limited to role {@code user} by {@code BorrowerProvisioningInterceptor} and {@code SecurityConfig}. */
     public Borrower getOrCreate(final Jwt jwt) {
         final String sub = jwt.getSubject();
         final Optional<Borrower> existing = borrowerRepository.findByKeycloakUserId(sub);
