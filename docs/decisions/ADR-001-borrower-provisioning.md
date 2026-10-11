@@ -1,6 +1,6 @@
 # ADR-001 – Create the Borrower on a user's first sign-in
 
-- **Status:** Accepted (design agreed in discussion, not implemented yet)
+- **Status:** Accepted and implemented in US-02.4 (see "Implementation decisions" below for what changed from the first design)
 - **Date:** 2026-10-11
 - **Decision ID:** D-11
 - **Affects:** US-02.4 ([SCRUM-24](https://tharangage.atlassian.net/browse/SCRUM-24)), E01 (roles, `me` endpoint)
@@ -29,8 +29,8 @@ is issued, so the first token (console user or brokered user) carries a valid `s
 that user's first call.
 
 ### Design
-1. **Where:** `BorrowerProvisioningService.getOrCreate(Jwt)`, called from one "current borrower" place (the planned
-   `GET /apis/v1/me`, borrow and return), not from a filter on every request. Lookup is by `keycloakUserId = sub`.
+1. **Where:** `BorrowerProvisioningService.getOrCreate(Jwt)`, called from a few places that need a Borrower, not on
+   every request (see "Implementation decisions"). Lookup is by `keycloakUserId = sub`.
 2. **Create from claims:** `given_name`, `family_name`, `email`. Fallbacks: `preferred_username` when a name is missing;
    a null email is allowed (the unique email index permits several nulls). `mobile` stays empty.
 3. **Concurrency:** insert in its own transaction (`REQUIRES_NEW`); on a duplicate-key error on `keycloakUserId`,
@@ -41,7 +41,7 @@ that user's first call.
 5. **Email clash with an older Borrower row** (created before `keycloakUserId` existed, no `keycloakUserId` set): link it
    (set `keycloakUserId`) only if the token has `email_verified=true`; otherwise answer **409** with a clear message.
    Default rule; can be changed later.
-6. **Roles:** only users with role `user` get a Borrower; admins do not. Depends on E01; until then every authenticated
+6. **Roles:** every caller with role `user` gets a Borrower (also when they have other roles); an admin without `user` does not. Implemented by `BorrowerProvisioningInterceptor`, registered only for `/apis/v1/me` and borrow (not return). Depends on E01; until then every authenticated
    user would qualify.
 7. **After creation the app database owns the profile:** later tokens do not overwrite names or email.
 
@@ -70,3 +70,38 @@ the unique index.
 - Rule 6 waits on E01 (roles) and the `me` endpoint (US-01.4).
 - Keycloak event names and the first-broker-login behaviour were described from general knowledge: verify them against the
   Keycloak version in use when this is implemented.
+
+## Implementation decisions (US-02.4, agreed 2026-10-11)
+Decisions taken while implementing, after the first design above. They replace the matching points of the first design.
+
+**Roles** (read from `realm_access.roles`; `user` → `ROLE_USER`, `admin` → `ROLE_ADMIN`; converter in `SecurityConfig`)
+- Every caller with role `user` has a Borrower, also when they have other roles (for example `user` and `admin`).
+- An admin without `user` has no Borrower and is never provisioned.
+- Rules exist only for the endpoints below. All other endpoints still just need a valid token (E01 adds the rest).
+
+| Endpoint | Allowed | Provisions the caller's Borrower? |
+|---|---|---|
+| `GET /apis/v1/borrowers/me` | `user` (admin only → 403) | Yes, and returns the Borrower (`BorrowerResponse`). The web app calls it after login. |
+| `GET /apis/v1/me` | `user`, `admin` | Yes for role `user`. Returns the same token profile for everybody (`UserProfileResponse`: `userId`, `firstname`, `lastname`, `email`). |
+| `POST /apis/v1/borrowers/{id}/books` (borrow) | `user`, `admin` | Yes for role `user`. `{id}` is not checked against the caller, because an admin borrows on behalf of a borrower at the library desk. |
+| `DELETE /apis/v1/borrowers/{id}/books/{book-id}` (return) | `admin` | No. Users cannot return books themselves. |
+
+**Where it runs**
+- `BorrowerProvisioningInterceptor` (a Spring `HandlerInterceptor`, registered in `WebConfig`) calls `getOrCreate` for `/apis/v1/me` and borrow only. An interceptor runs after Spring Security, can be limited to paths, and its exceptions still reach the `@ControllerAdvice`. Return is not included. It is not applied to every API: that would add a database lookup to every call and let a provisioning failure (such as a 409) block unrelated endpoints such as the book list.
+- `GET /apis/v1/borrowers/me` calls the service directly because it must return the Borrower. The interceptor does not pass the Borrower on to controllers (no request attribute), since nothing else needs it.
+
+**Changes to the first design**
+- An email that is not verified (`email_verified` not true) is **not stored** on a new Borrower, so a claimed address cannot occupy the unique email slot and lock out its real owner. Linking an older Borrower by email still needs `email_verified=true` (rule 5).
+- A token with no name and no email is rejected with 409 instead of creating an empty Borrower.
+- Linking an older Borrower is one conditional `UPDATE ... WHERE keycloak_user_id IS NULL` (`BorrowerRepository.linkIfUnlinked`), so two different users cannot overwrite each other's link. If 0 rows change, the row is re-read: ours means success, someone else's means 409.
+- The insert runs in `BorrowerInserter` (`REQUIRES_NEW`, a separate bean so the transaction proxy applies). On a duplicate key the row is re-read.
+- `AccessDeniedException` is mapped to 403 in `CustomResponseEntityExceptionHandler`.
+
+**Web app**
+- After login the app calls `GET /apis/v1/borrowers/me` (hook `useCurrentUser`, mounted in `Layout`) and for now only logs the result to the browser console. Later pages can read the same cached query to fill the screens. An admin without role `user` gets 403, which is logged as a warning.
+
+**Known gaps**
+- `GET /apis/v1/me` shows only the token profile but, for role `user`, provisions first. A provisioning failure (409: unverified email matching an older Borrower, or a token with no name and no email) therefore also fails `/me` and borrow for that user. Accepted so a problem is seen at the first call.
+- Because `user` is a realm default role, admins added in the Keycloak console also get `user`, so they are provisioned as borrowers too. Accepted: admins can also be library members. To keep desk-only accounts out of the borrower table, either unassign `default-roles-library` from that admin in Keycloak, or change the rule so `admin` wins.
+- Any caller with role `user` can borrow for any existing borrower id (the path id is not checked). Add an admin-only rule if this matters.
+- `getOrCreate` is not wired into return and the book APIs by design.

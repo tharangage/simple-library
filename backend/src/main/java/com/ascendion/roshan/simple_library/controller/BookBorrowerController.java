@@ -20,12 +20,14 @@ public class BookBorrowerController {
         this.bookBorrowerService = bookBorrowerService;
     }
 
+    /** The borrower in the path is not tied to the caller: an admin borrows on behalf of a borrower at the library desk. */
     @PostMapping
     public void borrowBook(@PathVariable("borrower-id") final String borrowerId,
                            @Valid @RequestBody final BorrowBookRequest borrowBookRequest) {
         bookBorrowerService.borrowBook(borrowerId, borrowBookRequest);
     }
 
+    /** Admin only, enforced in {@code SecurityConfig}. */
     @DeleteMapping("/{book-id}")
     public void returnBook(@PathVariable("borrower-id") final String borrowerId,
                            @PathVariable("book-id") final String bookId) {

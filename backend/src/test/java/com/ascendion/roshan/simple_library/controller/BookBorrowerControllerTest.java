@@ -4,6 +4,7 @@ import com.ascendion.roshan.simple_library.config.SecurityConfig;
 import com.ascendion.roshan.simple_library.dto.BorrowBookRequest;
 import com.ascendion.roshan.simple_library.exception.NotFoundException;
 import com.ascendion.roshan.simple_library.service.BookBorrowerService;
+import com.ascendion.roshan.simple_library.service.BorrowerProvisioningService;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +14,11 @@ import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import java.util.UUID;
 
@@ -52,10 +55,21 @@ class BookBorrowerControllerTest {
     private BookBorrowerService bookBorrowerService;
 
     @MockitoBean
+    private BorrowerProvisioningService provisioningService;
+
+    @MockitoBean
     private JpaMetamodelMappingContext jpaMetamodelMappingContext;
 
     @MockitoBean
     private JwtDecoder jwtDecoder;
+
+    private static RequestPostProcessor asUser() {
+        return jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"));
+    }
+
+    private static RequestPostProcessor asAdmin() {
+        return jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"));
+    }
 
     private static String borrowBody(final String bookId) {
         return "{\"bookId\":\"" + bookId + "\"}";
@@ -72,8 +86,47 @@ class BookBorrowerControllerTest {
     }
 
     @Test
-    void borrowBook_validRequest_returns200AndCallsService() throws Exception {
+    void borrowBook_adminOnly_borrowsForAnyBorrowerWithoutProvisioning() throws Exception {
+        final String otherBorrowerId = UUID.randomUUID().toString();
+
+        mockMvc.perform(post(BORROW_URL, otherBorrowerId).with(asAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(borrowBody(BOOK_ID)))
+                .andExpect(status().isOk());
+
+        verify(bookBorrowerService).borrowBook(eq(otherBorrowerId), any(BorrowBookRequest.class));
+        verifyNoInteractions(provisioningService);
+    }
+
+    @Test
+    void borrowBook_noRole_returns403() throws Exception {
         mockMvc.perform(post(BORROW_URL, BORROWER_ID).with(jwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(borrowBody(BOOK_ID)))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(bookBorrowerService, provisioningService);
+    }
+
+    @Test
+    void returnBook_user_returns403() throws Exception {
+        mockMvc.perform(delete(RETURN_URL, BORROWER_ID, BOOK_ID).with(asUser()))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(bookBorrowerService, provisioningService);
+    }
+
+    @Test
+    void returnBook_adminForAnyBorrower_doesNotProvision() throws Exception {
+        mockMvc.perform(delete(RETURN_URL, BORROWER_ID, BOOK_ID).with(asAdmin()))
+                .andExpect(status().isOk());
+
+        verifyNoInteractions(provisioningService);
+    }
+
+    @Test
+    void borrowBook_validRequest_returns200AndCallsService() throws Exception {
+        mockMvc.perform(post(BORROW_URL, BORROWER_ID).with(asUser())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(borrowBody(BOOK_ID)))
                 .andExpect(status().isOk());
@@ -85,7 +138,7 @@ class BookBorrowerControllerTest {
 
     @Test
     void borrowBook_bookIdNotUuid_returns400WithFieldMap() throws Exception {
-        mockMvc.perform(post(BORROW_URL, BORROWER_ID).with(jwt())
+        mockMvc.perform(post(BORROW_URL, BORROWER_ID).with(asUser())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(borrowBody("not-a-uuid")))
                 .andExpect(status().isBadRequest())
@@ -96,7 +149,7 @@ class BookBorrowerControllerTest {
 
     @Test
     void borrowBook_blankBookId_returns400WithFieldMap() throws Exception {
-        mockMvc.perform(post(BORROW_URL, BORROWER_ID).with(jwt())
+        mockMvc.perform(post(BORROW_URL, BORROWER_ID).with(asUser())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(borrowBody("")))
                 .andExpect(status().isBadRequest())
@@ -108,7 +161,7 @@ class BookBorrowerControllerTest {
         doThrow(new NotFoundException("Borrower not found"))
                 .when(bookBorrowerService).borrowBook(eq(BORROWER_ID), any(BorrowBookRequest.class));
 
-        mockMvc.perform(post(BORROW_URL, BORROWER_ID).with(jwt())
+        mockMvc.perform(post(BORROW_URL, BORROWER_ID).with(asUser())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(borrowBody(BOOK_ID)))
                 .andExpect(status().isNotFound())
@@ -120,7 +173,7 @@ class BookBorrowerControllerTest {
         doThrow(new IllegalStateException("Book is already borrowed"))
                 .when(bookBorrowerService).borrowBook(eq(BORROWER_ID), any(BorrowBookRequest.class));
 
-        mockMvc.perform(post(BORROW_URL, BORROWER_ID).with(jwt())
+        mockMvc.perform(post(BORROW_URL, BORROWER_ID).with(asUser())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(borrowBody(BOOK_ID)))
                 .andExpect(status().isConflict())
@@ -132,7 +185,7 @@ class BookBorrowerControllerTest {
         doThrow(new CannotAcquireLockException("lock timeout"))
                 .when(bookBorrowerService).borrowBook(eq(BORROWER_ID), any(BorrowBookRequest.class));
 
-        mockMvc.perform(post(BORROW_URL, BORROWER_ID).with(jwt())
+        mockMvc.perform(post(BORROW_URL, BORROWER_ID).with(asUser())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(borrowBody(BOOK_ID)))
                 .andExpect(status().isConflict())
@@ -144,7 +197,7 @@ class BookBorrowerControllerTest {
         doThrow(new DataIntegrityViolationException("constraint xyz"))
                 .when(bookBorrowerService).borrowBook(eq(BORROWER_ID), any(BorrowBookRequest.class));
 
-        mockMvc.perform(post(BORROW_URL, BORROWER_ID).with(jwt())
+        mockMvc.perform(post(BORROW_URL, BORROWER_ID).with(asUser())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(borrowBody(BOOK_ID)))
                 .andExpect(status().isConflict())
@@ -156,7 +209,7 @@ class BookBorrowerControllerTest {
         doThrow(new IllegalArgumentException("internal detail that must not leak"))
                 .when(bookBorrowerService).borrowBook(eq(BORROWER_ID), any(BorrowBookRequest.class));
 
-        mockMvc.perform(post(BORROW_URL, BORROWER_ID).with(jwt())
+        mockMvc.perform(post(BORROW_URL, BORROWER_ID).with(asUser())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(borrowBody(BOOK_ID)))
                 .andExpect(status().isInternalServerError())
@@ -173,7 +226,7 @@ class BookBorrowerControllerTest {
 
     @Test
     void returnBook_validRequest_returns200AndCallsService() throws Exception {
-        mockMvc.perform(delete(RETURN_URL, BORROWER_ID, BOOK_ID).with(jwt()))
+        mockMvc.perform(delete(RETURN_URL, BORROWER_ID, BOOK_ID).with(asAdmin()))
                 .andExpect(status().isOk());
 
         verify(bookBorrowerService).returnBook(BORROWER_ID, BOOK_ID);
@@ -184,7 +237,7 @@ class BookBorrowerControllerTest {
         doThrow(new IllegalStateException("Book was not borrowed by this borrower"))
                 .when(bookBorrowerService).returnBook(BORROWER_ID, BOOK_ID);
 
-        mockMvc.perform(delete(RETURN_URL, BORROWER_ID, BOOK_ID).with(jwt()))
+        mockMvc.perform(delete(RETURN_URL, BORROWER_ID, BOOK_ID).with(asAdmin()))
                 .andExpect(status().isConflict())
                 .andExpect(content().string("Book was not borrowed by this borrower"));
     }

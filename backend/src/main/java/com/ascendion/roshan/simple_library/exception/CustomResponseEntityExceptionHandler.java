@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -33,6 +34,14 @@ public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptio
         log.warn("Not found: {}", ex.getMessage());
         return super.handleExceptionInternal(ex, ex.getMessage(),
                 new HttpHeaders(), HttpStatus.NOT_FOUND, request);
+    }
+
+    /** For an access check thrown inside a controller. URL rules in SecurityConfig answer 403 from the security filter (empty body). */
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<Object> handleAccessDenied(final AccessDeniedException ex, final WebRequest request) {
+        log.warn("Access denied: {}", ex.getMessage());
+        return super.handleExceptionInternal(ex, "Access denied",
+                new HttpHeaders(), HttpStatus.FORBIDDEN, request);
     }
 
     @ExceptionHandler(IllegalStateException.class)
