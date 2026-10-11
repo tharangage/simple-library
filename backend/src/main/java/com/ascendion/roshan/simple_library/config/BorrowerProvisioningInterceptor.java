@@ -9,10 +9,13 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
- * US-02.4: every caller with the role {@code user} has a Borrower. Creates it on the first call.
+ * US-02.4: every caller with the role {@code user} has a Borrower. Creates it on the first call and
+ * exposes it to the controller as the request attribute {@link #CURRENT_BORROWER} (borrow checks it).
  * Callers without the role (admin only) get no Borrower. Registered only for the paths that need it.
  */
 public class BorrowerProvisioningInterceptor implements HandlerInterceptor {
+
+    public static final String CURRENT_BORROWER = "currentBorrower";
 
     private final BorrowerProvisioningService provisioningService;
 
@@ -26,7 +29,7 @@ public class BorrowerProvisioningInterceptor implements HandlerInterceptor {
         if (authentication != null
                 && authentication.getPrincipal() instanceof Jwt jwt
                 && authentication.getAuthorities().stream().anyMatch(a -> SecurityConfig.ROLE_USER.equals(a.getAuthority()))) {
-            provisioningService.getOrCreate(jwt);
+            request.setAttribute(CURRENT_BORROWER, provisioningService.getOrCreate(jwt));
         }
         return true;
     }

@@ -1,15 +1,16 @@
 package com.ascendion.roshan.simple_library.service;
 
+import com.ascendion.roshan.simple_library.config.LibraryProperties;
 import com.ascendion.roshan.simple_library.dto.BorrowBookRequest;
 import com.ascendion.roshan.simple_library.entity.Book;
 import com.ascendion.roshan.simple_library.entity.Borrower;
 import com.ascendion.roshan.simple_library.exception.NotFoundException;
 import com.ascendion.roshan.simple_library.repository.BookRepository;
 import com.ascendion.roshan.simple_library.repository.BorrowerRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -38,8 +39,12 @@ class BookBorrowerServiceTest {
     @Mock
     private BorrowerRepository borrowerRepository;
 
-    @InjectMocks
     private BookBorrowerService bookBorrowerService;
+
+    @BeforeEach
+    void setUp() {
+        bookBorrowerService = new BookBorrowerService(bookRepository, borrowerRepository, new LibraryProperties(3));
+    }
 
     private static Borrower borrower(final String id) {
         final Borrower borrower = new Borrower();
@@ -70,7 +75,7 @@ class BookBorrowerServiceTest {
 
         @Test
         void borrowBook_unknownBorrower_throwsNotFound() {
-            when(borrowerRepository.findById(BORROWER_ID)).thenReturn(Optional.empty());
+            when(borrowerRepository.findByIdForUpdate(BORROWER_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> bookBorrowerService.borrowBook(BORROWER_ID, request()))
                     .isInstanceOf(NotFoundException.class)
@@ -80,7 +85,7 @@ class BookBorrowerServiceTest {
 
         @Test
         void borrowBook_unknownBook_throwsNotFound() {
-            when(borrowerRepository.findById(BORROWER_ID)).thenReturn(Optional.of(borrower(BORROWER_ID)));
+            when(borrowerRepository.findByIdForUpdate(BORROWER_ID)).thenReturn(Optional.of(borrower(BORROWER_ID)));
             when(bookRepository.findByIdForUpdate(BOOK_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> bookBorrowerService.borrowBook(BORROWER_ID, request()))
@@ -91,20 +96,53 @@ class BookBorrowerServiceTest {
 
         @Test
         void borrowBook_alreadyBorrowed_throwsIllegalStateAndDoesNotSave() {
-            when(borrowerRepository.findById(BORROWER_ID)).thenReturn(Optional.of(borrower(BORROWER_ID)));
+            when(borrowerRepository.findByIdForUpdate(BORROWER_ID)).thenReturn(Optional.of(borrower(BORROWER_ID)));
             when(bookRepository.findByIdForUpdate(BOOK_ID)).thenReturn(Optional.of(bookBorrowedBy(OTHER_BORROWER_ID)));
 
             assertThatThrownBy(() -> bookBorrowerService.borrowBook(BORROWER_ID, request()))
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessage("Book is already borrowed");
+                    .hasMessage("BOOK_NOT_AVAILABLE");
             verify(bookRepository, never()).save(any(Book.class));
+        }
+
+        @Test
+        void borrowBook_borrowerAtLimit_throwsLimitReachedAndDoesNotSave() {
+            when(borrowerRepository.findByIdForUpdate(BORROWER_ID)).thenReturn(Optional.of(borrower(BORROWER_ID)));
+            when(bookRepository.findByIdForUpdate(BOOK_ID)).thenReturn(Optional.of(availableBook()));
+            when(bookRepository.countByBorrowedById(BORROWER_ID)).thenReturn(3L);
+
+            assertThatThrownBy(() -> bookBorrowerService.borrowBook(BORROWER_ID, request()))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("BORROW_LIMIT_REACHED");
+            verify(bookRepository, never()).save(any(Book.class));
+        }
+
+        @Test
+        void borrowBook_borrowerBelowLimit_borrows() {
+            final Book book = availableBook();
+            when(borrowerRepository.findByIdForUpdate(BORROWER_ID)).thenReturn(Optional.of(borrower(BORROWER_ID)));
+            when(bookRepository.findByIdForUpdate(BOOK_ID)).thenReturn(Optional.of(book));
+            when(bookRepository.countByBorrowedById(BORROWER_ID)).thenReturn(2L);
+
+            bookBorrowerService.borrowBook(BORROWER_ID, request());
+
+            assertThat(book.isBorrowed()).isTrue();
+        }
+
+        @Test
+        void borrowBook_bookAlreadyBorrowedAndBorrowerAtLimit_reportsBookNotAvailable() {
+            when(borrowerRepository.findByIdForUpdate(BORROWER_ID)).thenReturn(Optional.of(borrower(BORROWER_ID)));
+            when(bookRepository.findByIdForUpdate(BOOK_ID)).thenReturn(Optional.of(bookBorrowedBy(OTHER_BORROWER_ID)));
+
+            assertThatThrownBy(() -> bookBorrowerService.borrowBook(BORROWER_ID, request()))
+                    .hasMessage("BOOK_NOT_AVAILABLE");
         }
 
         @Test
         void borrowBook_availableBook_marksBorrowedAndSaves() {
             final Borrower borrower = borrower(BORROWER_ID);
             final Book book = availableBook();
-            when(borrowerRepository.findById(BORROWER_ID)).thenReturn(Optional.of(borrower));
+            when(borrowerRepository.findByIdForUpdate(BORROWER_ID)).thenReturn(Optional.of(borrower));
             when(bookRepository.findByIdForUpdate(BOOK_ID)).thenReturn(Optional.of(book));
             final LocalDateTime before = LocalDateTime.now();
 
@@ -118,13 +156,25 @@ class BookBorrowerServiceTest {
 
         @Test
         void borrowBook_anyRequest_loadsBookWithLock() {
-            when(borrowerRepository.findById(BORROWER_ID)).thenReturn(Optional.of(borrower(BORROWER_ID)));
+            when(borrowerRepository.findByIdForUpdate(BORROWER_ID)).thenReturn(Optional.of(borrower(BORROWER_ID)));
             when(bookRepository.findByIdForUpdate(BOOK_ID)).thenReturn(Optional.of(availableBook()));
 
             bookBorrowerService.borrowBook(BORROWER_ID, request());
 
             verify(bookRepository).findByIdForUpdate(BOOK_ID);
             verify(bookRepository, never()).findById(any());
+        }
+    }
+
+    @Nested
+    class Counts {
+
+        @Test
+        void borrowedCount_delegatesToRepository() {
+            when(bookRepository.countByBorrowedById(BORROWER_ID)).thenReturn(2L);
+
+            assertThat(bookBorrowerService.borrowedCount(BORROWER_ID)).isEqualTo(2L);
+            assertThat(bookBorrowerService.maxItemsPerBorrower()).isEqualTo(3);
         }
     }
 

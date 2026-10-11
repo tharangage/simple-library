@@ -15,6 +15,9 @@ public interface BookRepository extends JpaRepository<Book, String> {
 
     Optional<Book> findFirstByIsbn(String isbn);
 
+    /** Books this borrower currently holds. */
+    long countByBorrowedById(String borrowerId);
+
     /**
      * Loads a book with a pessimistic write lock (SELECT ... FOR UPDATE) so that two
      * concurrent borrow/return requests for the same book are serialised.

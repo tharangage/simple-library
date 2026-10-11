@@ -1,7 +1,9 @@
 package com.ascendion.roshan.simple_library.repository;
 
 import com.ascendion.roshan.simple_library.entity.Borrower;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,6 +16,14 @@ import java.util.Optional;
 public interface BorrowerRepository extends JpaRepository<Borrower, String> {
 
     boolean existsByEmailIgnoreCase(String email);
+
+    /**
+     * Loads a borrower with a pessimistic write lock, so two parallel borrows by the same person are
+     * serialised and cannot both pass the item-limit check. Must be called inside a transaction.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select b from Borrower b where b.id = :id")
+    Optional<Borrower> findByIdForUpdate(@Param("id") String id);
 
     Optional<Borrower> findByKeycloakUserId(String keycloakUserId);
 
