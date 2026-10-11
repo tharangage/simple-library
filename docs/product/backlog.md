@@ -15,7 +15,7 @@
 ## Epics
 | ID | Epic | Layers | Stories | Milestone | Jira |
 |---|---|---|---|---|---|
-| [E01](epics/E01-identity-and-access.md) | Identity & access (Keycloak realm `library`, roles) | IAM, BE | 6 | M1 | [SCRUM-5](https://tharangage.atlassian.net/browse/SCRUM-5) |
+| [E01](epics/E01-identity-and-access.md) | Identity & access (Keycloak realm `library`, roles) | IAM, BE | 9 | M1 | [SCRUM-5](https://tharangage.atlassian.net/browse/SCRUM-5) |
 | [E02](epics/E02-self-registration.md) | User self-registration | BE, FE, IAM | 4 | M2 | [SCRUM-6](https://tharangage.atlassian.net/browse/SCRUM-6) |
 | [E03](epics/E03-book-catalogue.md) | Book catalogue & availability | BE, FE | 5 | M2 | [SCRUM-7](https://tharangage.atlassian.net/browse/SCRUM-7) |
 | [E04](epics/E04-borrowing.md) | Borrowing (limit 3) & "My books" | BE, FE | 3 | M3 | [SCRUM-8](https://tharangage.atlassian.net/browse/SCRUM-8) |
