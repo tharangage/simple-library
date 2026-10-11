@@ -38,25 +38,16 @@ public class BorrowerProvisioningService {
         }
 
         final String email = normalizedEmail(jwt);
-        if (email != null) {
-            final Optional<Borrower> sameEmail = borrowerRepository.findFirstByEmailIgnoreCase(email);
-            if (sameEmail.isPresent()) {
-                return linkLegacyBorrower(sameEmail.get(), sub, jwt);
-            }
-        }
+        final Optional<Borrower> sameEmail = email == null
+                ? Optional.empty()
+                : borrowerRepository.findFirstByEmailIgnoreCase(email);
+        return sameEmail.isPresent()
+                ? linkLegacyBorrower(sameEmail.get(), sub, jwt)
+                : create(jwt, sub, email);
+    }
 
-        final String firstname = firstNonBlank(jwt.getClaimAsString("given_name"), jwt.getClaimAsString("preferred_username"));
-        final String lastname = firstNonBlank(jwt.getClaimAsString("family_name"), jwt.getClaimAsString("preferred_username"));
-        if (firstname == null && lastname == null && email == null) {
-            throw new IllegalStateException("Token has no name or email to create a borrower from");
-        }
-
-        final Borrower borrower = new Borrower();
-        borrower.setFirstname(firstname);
-        borrower.setLastname(lastname);
-        // An unverified email is not stored: it could belong to someone else and would block them via the unique index.
-        borrower.setEmail(Boolean.TRUE.equals(jwt.getClaimAsBoolean("email_verified")) ? email : null);
-        borrower.setKeycloakUserId(sub);
+    private Borrower create(final Jwt jwt, final String sub, final String email) {
+        final Borrower borrower = newBorrower(jwt, sub, email);
         try {
             return inserter.insert(borrower);
         } catch (DataIntegrityViolationException ex) {
@@ -67,12 +58,33 @@ public class BorrowerProvisioningService {
         }
     }
 
+    private static Borrower newBorrower(final Jwt jwt, final String sub, final String email) {
+        final String username = jwt.getClaimAsString("preferred_username");
+        final String firstname = firstNonBlank(jwt.getClaimAsString("given_name"), username);
+        final String lastname = firstNonBlank(jwt.getClaimAsString("family_name"), username);
+        if (firstname == null && lastname == null && email == null) {
+            throw new IllegalStateException("Token has no name or email to create a borrower from");
+        }
+
+        final Borrower borrower = new Borrower();
+        borrower.setFirstname(firstname);
+        borrower.setLastname(lastname);
+        // An unverified email is not stored: it could belong to someone else and would block them via the unique index.
+        borrower.setEmail(isEmailVerified(jwt) ? email : null);
+        borrower.setKeycloakUserId(sub);
+        return borrower;
+    }
+
+    private static boolean isEmailVerified(final Jwt jwt) {
+        return Boolean.TRUE.equals(jwt.getClaimAsBoolean("email_verified"));
+    }
+
     /** An older row with this email and no keycloakUserId is linked only for a verified email. */
     private Borrower linkLegacyBorrower(final Borrower legacy, final String sub, final Jwt jwt) {
         if (legacy.getKeycloakUserId() != null) {
             throw new IllegalStateException("Email already registered to another account");
         }
-        if (!Boolean.TRUE.equals(jwt.getClaimAsBoolean("email_verified"))) {
+        if (!isEmailVerified(jwt)) {
             throw new IllegalStateException("Email matches an existing borrower but is not verified");
         }
         // One conditional UPDATE: if another request linked the row first, 0 rows change and nothing is overwritten.
