@@ -42,16 +42,16 @@ Other: `backend/Dockerfile`, `docker-compose.yaml` (app only), `keycloak/docker-
 | GET | `/apis/v1/books` | 200, `Page<Book>` |
 | POST | `/apis/v1/registrations` | 201, **public** self-registration: creates the Keycloak user (Admin API) + Borrower; 409 `EMAIL_ALREADY_REGISTERED` |
 | POST | `/apis/v1/borrowers` | 200, registers a borrower |
-| GET | `/apis/v1/borrowers/me` | 200, role `user`: the caller's Borrower (created on the first call, US-02.4); the web app calls it after login |
+| GET | `/apis/v1/borrowers/me` | 200, role `user`: the caller's Borrower plus `borrowedCount`, `maxItems`, `remainingSlots` (created on the first call, US-02.4); the web app calls it after login |
 | GET | `/apis/v1/me` | 200, token profile `{userId, firstname, lastname, email}` for any user |
-| POST | `/apis/v1/borrowers/{borrower-id}/books` | 200, borrow (`{"bookId": "<uuid>"}`) |
+| POST | `/apis/v1/borrowers/{borrower-id}/books` | 200 (empty body), borrow (`{"bookId": "<uuid>"}`). 409 body `BOOK_NOT_AVAILABLE` or `BORROW_LIMIT_REACHED` (max 3 items, `app.library.max-items-per-borrower`) |
 | DELETE | `/apis/v1/borrowers/{borrower-id}/books/{book-id}` | 200, return |
 
 Business rules:
 - Several copies of a book may share an ISBN, but title **and** author must match the existing one → otherwise 409.
 - Borrower email is unique (`DataIntegrityViolationException` → `IllegalStateException("Email already exists")`).
 - A borrowed book can't be borrowed again; only the borrower who has it can be returned by that borrower id, and only an admin may call return (library desk).
-- Borrow takes the borrower id from the path without checking it against the caller (an admin borrows on behalf of a borrower).
+- Borrow: an admin may borrow for any borrower (library desk); everybody else only for their own Borrower (403 otherwise). A borrower holds at most 3 books.
 
 Error mapping (`CustomResponseEntityExceptionHandler`):
 `NotFoundException` → 404, `AccessDeniedException` → 403, `IllegalStateException` / `DataIntegrityViolationException` → 409,
@@ -66,8 +66,8 @@ The body for 404/409/500 is the plain message string.
   `DELETE .../borrowers/{id}/books/{book-id}` (`admin`); a token without the role → 403. Tests use
   `jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))`. All other endpoints (books, borrowers) still just need a valid token (E01 adds the rest).
 - Borrower provisioning (US-02.4): `BorrowerProvisioningInterceptor` (registered in `WebConfig` for `/me` and borrow only; `GET /borrowers/me` calls the service itself)
-  creates the Borrower for every caller with `ROLE_USER`. The borrower id
-  in the borrow path is not checked against the caller (an admin borrows on behalf of a borrower at the desk); an admin without `user` gets no Borrower.
+  creates the Borrower for every caller with `ROLE_USER`. Borrow checks it:
+  an admin may use any borrower id in the path (library desk), everybody else only their own (else 403); an admin without `user` gets no Borrower.
   Return is admin-only and does not provision.
 - `issuer-uri` = `${app.keycloak.public-url}/realms/${app.keycloak.realm}` (default `http://localhost:8080/realms/library`).
   It must equal the token's `iss` claim, i.e. the URL the browser used.

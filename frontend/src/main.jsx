@@ -5,6 +5,7 @@ import { AuthProvider } from 'react-oidc-context'
 import { RouterProvider } from 'react-router'
 import { router } from './app/router.jsx'
 import { oidcConfig } from './auth/oidcConfig.js'
+import { ToastProvider } from './components/Toast.jsx'
 import './index.css'
 
 const queryClient = new QueryClient({
@@ -30,7 +31,9 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthProvider {...oidcConfig} onSigninCallback={onSigninCallback}>
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
+        <ToastProvider>
+          <RouterProvider router={router} />
+        </ToastProvider>
       </QueryClientProvider>
     </AuthProvider>
   </StrictMode>,

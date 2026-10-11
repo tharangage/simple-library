@@ -1,10 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/client.js'
 import { fetchBooks } from '../../api/books.js'
+import { borrowBook, fetchMyBorrower } from '../../api/borrowers.js'
+import { ToastProvider } from '../../components/Toast.jsx'
 import { BooksPage } from './BooksPage.jsx'
 
 // Replace the real login library and the real HTTP call with test doubles.
@@ -13,6 +15,7 @@ vi.mock('react-oidc-context', () => ({
   useAuth: () => ({ user: { access_token: 'test-token' }, signinRedirect }),
 }))
 vi.mock('../../api/books.js', () => ({ fetchBooks: vi.fn() }))
+vi.mock('../../api/borrowers.js', () => ({ fetchMyBorrower: vi.fn(), borrowBook: vi.fn() }))
 
 const page = (items, overrides = {}) => ({
   items,
@@ -35,10 +38,12 @@ function renderPage(url = '/books') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[url]}>
-        <BooksPage />
-        <CurrentUrl />
-      </MemoryRouter>
+      <ToastProvider>
+        <MemoryRouter initialEntries={[url]}>
+          <BooksPage />
+          <CurrentUrl />
+        </MemoryRouter>
+      </ToastProvider>
     </QueryClientProvider>,
   )
 }
@@ -46,7 +51,11 @@ function renderPage(url = '/books') {
 describe('BooksPage', () => {
   beforeEach(() => {
     vi.mocked(fetchBooks).mockReset()
+    vi.mocked(fetchMyBorrower).mockReset()
+    vi.mocked(borrowBook).mockReset()
     signinRedirect.mockReset()
+    // Default: an admin without a borrower record, so no Borrow buttons. Borrow tests override this.
+    vi.mocked(fetchMyBorrower).mockRejectedValue(new ApiError(403, 'Access denied'))
   })
 
   it('lists books with their status', async () => {
@@ -144,5 +153,101 @@ describe('BooksPage', () => {
     renderPage('/books?page=9')
 
     expect(await screen.findByText(/There are no books on page 9/)).toBeInTheDocument()
+  })
+})
+
+const borrower = (overrides = {}) => ({ id: 'b-1', borrowedCount: 1, maxItems: 3, remainingSlots: 2, ...overrides })
+
+describe('BooksPage borrowing', () => {
+  beforeEach(() => {
+    vi.mocked(fetchBooks).mockReset()
+    vi.mocked(fetchMyBorrower).mockReset()
+    vi.mocked(borrowBook).mockReset()
+    vi.mocked(fetchBooks).mockResolvedValue(page([book('1', 'Dune'), book('2', 'Emma', true)]))
+    vi.mocked(fetchMyBorrower).mockResolvedValue(borrower())
+    vi.mocked(borrowBook).mockResolvedValue(null)
+  })
+
+  it('offers Borrow only on available books', async () => {
+    renderPage()
+
+    expect(await screen.findByRole('button', { name: 'Borrow Dune' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Borrow Emma' })).not.toBeInTheDocument()
+  })
+
+  it('shows no Borrow buttons to a user without a borrower record (admin only)', async () => {
+    vi.mocked(fetchMyBorrower).mockRejectedValue(new ApiError(403, 'Access denied'))
+    renderPage()
+
+    await screen.findByText('Dune')
+    expect(screen.queryByRole('button', { name: /^Borrow/ })).not.toBeInTheDocument()
+  })
+
+  it('asks for confirmation with the title and the places left, and Cancel changes nothing', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Borrow Dune' }))
+
+    const dialog = screen.getByRole('dialog', { name: 'Borrow this book?' })
+    expect(within(dialog).getByText('Dune')).toBeInTheDocument()
+    expect(within(dialog).getByText('You have 2 of 3 places left.')).toBeInTheDocument()
+
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(borrowBook).not.toHaveBeenCalled()
+  })
+
+  it('borrows after confirmation, shows a message and reloads the list and the counts', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: 'Borrow Dune' }))
+    const booksCalls = vi.mocked(fetchBooks).mock.calls.length
+    const userCalls = vi.mocked(fetchMyBorrower).mock.calls.length
+
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Borrow' }))
+
+    expect(borrowBook).toHaveBeenCalledWith({ token: 'test-token', borrowerId: 'b-1', bookId: '1' })
+    expect(await screen.findByRole('status')).toHaveTextContent('Dune')
+    await waitFor(() => expect(vi.mocked(fetchBooks).mock.calls.length).toBeGreaterThan(booksCalls))
+    await waitFor(() => expect(vi.mocked(fetchMyBorrower).mock.calls.length).toBeGreaterThan(userCalls))
+  })
+
+  it('disables Borrow with an explanation when the user is at the limit', async () => {
+    vi.mocked(fetchMyBorrower).mockResolvedValue(borrower({ borrowedCount: 3, remainingSlots: 0 }))
+    const user = userEvent.setup()
+    renderPage()
+
+    const button = await screen.findByRole('button', { name: 'Borrow Dune' })
+    expect(button).toHaveAttribute('aria-disabled', 'true')
+    expect(button).toHaveAccessibleDescription('You have reached the limit of 3 books.')
+    expect(button.parentElement).toHaveAttribute('title', 'You have reached the limit of 3 books.')
+
+    await user.click(button)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('explains that someone else took the book and reloads the list', async () => {
+    vi.mocked(borrowBook).mockRejectedValue(new ApiError(409, 'BOOK_NOT_AVAILABLE'))
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: 'Borrow Dune' }))
+    const booksCalls = vi.mocked(fetchBooks).mock.calls.length
+
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Borrow' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Someone else has just borrowed this book')
+    await waitFor(() => expect(vi.mocked(fetchBooks).mock.calls.length).toBeGreaterThan(booksCalls))
+  })
+
+  it('explains the limit when the server refuses with BORROW_LIMIT_REACHED', async () => {
+    vi.mocked(borrowBook).mockRejectedValue(new ApiError(409, 'BORROW_LIMIT_REACHED'))
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: 'Borrow Dune' }))
+
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Borrow' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('limit of 3 books')
   })
 })

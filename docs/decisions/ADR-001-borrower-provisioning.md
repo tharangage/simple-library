@@ -83,7 +83,7 @@ Decisions taken while implementing, after the first design above. They replace t
 |---|---|---|
 | `GET /apis/v1/borrowers/me` | `user` (admin only → 403) | Yes, and returns the Borrower (`BorrowerResponse`). The web app calls it after login. |
 | `GET /apis/v1/me` | `user`, `admin` | Yes for role `user`. Returns the same token profile for everybody (`UserProfileResponse`: `userId`, `firstname`, `lastname`, `email`). |
-| `POST /apis/v1/borrowers/{id}/books` (borrow) | `user`, `admin` | Yes for role `user`. `{id}` is not checked against the caller, because an admin borrows on behalf of a borrower at the library desk. |
+| `POST /apis/v1/borrowers/{id}/books` (borrow) | `user`, `admin` | Yes for role `user`. An admin may use any `{id}` (library desk); everybody else only their own Borrower, otherwise 403 (SCRUM-62, US-04.1). |
 | `DELETE /apis/v1/borrowers/{id}/books/{book-id}` (return) | `admin` | No. Users cannot return books themselves. |
 
 **Where it runs**
@@ -103,5 +103,5 @@ Decisions taken while implementing, after the first design above. They replace t
 **Known gaps**
 - `GET /apis/v1/me` shows only the token profile but, for role `user`, provisions first. A provisioning failure (409: unverified email matching an older Borrower, or a token with no name and no email) therefore also fails `/me` and borrow for that user. Accepted so a problem is seen at the first call.
 - Because `user` is a realm default role, admins added in the Keycloak console also get `user`, so they are provisioned as borrowers too. Accepted: admins can also be library members. To keep desk-only accounts out of the borrower table, either unassign `default-roles-library` from that admin in Keycloak, or change the rule so `admin` wins.
-- Any caller with role `user` can borrow for any existing borrower id (the path id is not checked). Add an admin-only rule if this matters.
+- (Closed by US-04.1 / SCRUM-62) Borrowing for another borrower is now allowed for admins only.
 - `getOrCreate` is not wired into return and the book APIs by design.

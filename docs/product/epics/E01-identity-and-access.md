@@ -57,7 +57,7 @@ As an API user, I want to log in from Swagger UI's *Authorize* button with my li
 - Swagger UI keeps client `library-swagger` and realm `library` (already working). Each operation shows its required role in the description.
 - `POST /apis/v1/registrations` is marked as needing no auth.
 
-### US-01.7 Borrow on behalf of another borrower: admin only (BE · S) · [SCRUM-62](https://tharangage.atlassian.net/browse/SCRUM-62)
+### US-01.7 Borrow on behalf of another borrower: admin only (BE · S) · [SCRUM-62](https://tharangage.atlassian.net/browse/SCRUM-62) – *implemented together with US-04.1*
 As the library, I want only admins to borrow on behalf of another borrower, so that a user cannot create loans under someone else's name.
 - Origin: accepted gap of US-02.4 ([ADR-001](../../decisions/ADR-001-borrower-provisioning.md)). Today `POST /apis/v1/borrowers/{borrower-id}/books` does not compare `{borrower-id}` with the caller, so any `user` can borrow for any existing borrower id.
 - A `user` (not admin) may borrow only for their own Borrower; another id → 403. An `admin` may borrow for any existing borrower (library desk); unknown id → 404.

@@ -55,7 +55,9 @@ async function request(method, path, { token, params, body } = {}) {
     const { message, fieldErrors } = await readError(response)
     throw new ApiError(response.status, message, fieldErrors)
   }
-  return response.status === 204 ? null : response.json()
+  // 204, or 200 with no body (borrow answers that way): nothing to parse.
+  const text = await response.text()
+  return text ? JSON.parse(text) : null
 }
 
 /**

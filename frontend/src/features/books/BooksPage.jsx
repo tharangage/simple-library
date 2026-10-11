@@ -1,9 +1,13 @@
+import { useState } from 'react'
 import { useAuth } from 'react-oidc-context'
 import { useSearchParams } from 'react-router'
+import { ConfirmDialog } from '../../components/ConfirmDialog.jsx'
 import { Pagination } from '../../components/Pagination.jsx'
-import { getBookStatus } from './bookStatus.js'
+import { useCurrentUser } from '../user/useCurrentUser.js'
+import { BOOK_STATUS, getBookStatus } from './bookStatus.js'
 import { StatusBadge } from './StatusBadge.jsx'
 import { useBooks } from './useBooks.js'
+import { useBorrowBook } from './useBorrowBook.js'
 
 export const PAGE_SIZE = 20
 
@@ -36,6 +40,19 @@ export function BooksPage() {
     size: PAGE_SIZE,
     sort: `${sort.field},${sort.direction}`,
   })
+
+  // The user's Borrower and item counts. Without a Borrower (admin only, or still loading) there are no Borrow buttons.
+  const { data: borrower } = useCurrentUser()
+  const borrow = useBorrowBook()
+  const [bookToBorrow, setBookToBorrow] = useState(null)
+  const canBorrow = Boolean(borrower?.id)
+  const atLimit = canBorrow && borrower.remainingSlots <= 0
+
+  const confirmBorrow = () => {
+    const book = bookToBorrow
+    setBookToBorrow(null)
+    borrow.mutate({ borrowerId: borrower.id, book, maxItems: borrower.maxItems })
+  }
 
   const goToPage = (newPage) => {
     const next = new URLSearchParams(searchParams)
@@ -90,6 +107,11 @@ export function BooksPage() {
                   <SortableHeader key={field} field={field} label={label} sort={sort} onSort={sortBy} />
                 ))}
                 <th scope="col">Status</th>
+                {canBorrow && (
+                  <th scope="col" className="book-table__action">
+                    <span className="visually-hidden">Action</span>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -105,6 +127,19 @@ export function BooksPage() {
                   <td data-label="Status">
                     <StatusBadge status={getBookStatus(book)} />
                   </td>
+                  {canBorrow && (
+                    <td data-label="Action" className="book-table__action">
+                      {getBookStatus(book) === BOOK_STATUS.AVAILABLE && (
+                        <BorrowButton
+                          book={book}
+                          atLimit={atLimit}
+                          maxItems={borrower.maxItems}
+                          busy={borrow.isPending}
+                          onBorrow={setBookToBorrow}
+                        />
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -117,7 +152,50 @@ export function BooksPage() {
           />
         </>
       )}
+
+      <ConfirmDialog
+        open={bookToBorrow !== null}
+        title="Borrow this book?"
+        confirmLabel="Borrow"
+        onConfirm={confirmBorrow}
+        onCancel={() => setBookToBorrow(null)}
+      >
+        {bookToBorrow && (
+          <>
+            <p>
+              <strong>{bookToBorrow.title}</strong> by {bookToBorrow.author}
+            </p>
+            <p className="muted">
+              You have {borrower.remainingSlots} of {borrower.maxItems} places left.
+            </p>
+          </>
+        )}
+      </ConfirmDialog>
     </section>
+  )
+}
+
+/** At the limit the button stays visible but does nothing, and says why (tooltip and screen reader text). */
+function BorrowButton({ book, atLimit, maxItems, busy, onBorrow }) {
+  const reason = `You have reached the limit of ${maxItems} books.`
+  const hintId = `limit-hint-${book.id}`
+  return (
+    <span title={atLimit ? reason : undefined}>
+      <button
+        type="button"
+        aria-label={`Borrow ${book.title}`}
+        aria-disabled={atLimit || busy}
+        aria-describedby={atLimit ? hintId : undefined}
+        onClick={() => !atLimit && !busy && onBorrow(book)}
+      >
+        Borrow
+      </button>
+      {atLimit && (
+        <span id={hintId} className="visually-hidden">
+          {reason}
+        </span>
+      )}
+    </span>
   )
 }
 
