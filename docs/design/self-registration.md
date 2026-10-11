@@ -3,7 +3,7 @@
 - **Figma:** [Simple Library – Self-Registration](https://www.figma.com/design/napnNlVd3hy0LtHqzMtQtA) (file key `napnNlVd3hy0LtHqzMtQtA`)
 - **Status:** Draft, desktop only (1440×900). No mobile layout yet.
 - **Implemented** in code as E02 (US-02.1–02.3, merged in PR #11). The Figma frames match the built form: a **required Mobile number** (E.164, with a hint) and no address field.
-- **Frontend:** `frontend/src/features/registration/RegisterPage.jsx` follows the frames for the form (440 px, same sizes, spacing, input and button style, colours and wording such as "Sign in" / "Go to sign in"). By choice it is shown **inside the normal app shell** (header + page area) as a centred card, not as the full-screen two-panel frame; the brand panel from the frames is not built. The whole app uses the design's look (blue header and accent, 8 px corners, Inter, bold headings), defined as tokens at the top of `frontend/src/index.css`, so Home and Books match the registration page.
+- **Frontend:** `frontend/src/features/registration/RegisterPage.jsx` and the global styles in `frontend/src/index.css` follow these frames: blue header and accent (`#2563eb`), light grey page, a centred white form card (440 px) with 8 px input and button corners, Inter first in the font stack, bold headings. The same look is used on Home and Books. The frames show the page **inside the app shell**.
 - **Font:** Inter. Colours are plain fills (no Figma variables or design system yet). The Figma file uses Inter; the app uses the system font stack, so letter shapes differ slightly (add Inter as a web font if an exact match matters).
 
 ## Frames
@@ -13,7 +13,7 @@
 | Sign up – Validation errors | `1:45` | Filled form, "This email is already registered" on Email, "Passwords do not match" on Confirm password |
 | Sign up – Success | `1:90` | Green check, "Account created", "Go to sign in" |
 
-Layout: blue brand panel on the left (720 px), form panel on the right (440 px form). Built with auto-layout.
+Layout (all frames, 1440×900): blue **Header** (brand name, *Register* link, white *Log in* button) on top, then a grey **Page** area with a centred white **Card** (440 px, 12 px corners) that holds the form. Built with auto-layout. An earlier version of the frames had a full-screen two-panel layout with a blue brand panel; it was dropped in favour of the in-app layout.
 
 ## Fields and backend mapping
 | Field | Required | Backend today |
