@@ -38,11 +38,11 @@ Other: `backend/Dockerfile`, `docker-compose.yaml` (app only), `keycloak/docker-
 ## API
 | Method | Path | Result |
 |---|---|---|
-| POST | `/apis/v1/books` | 201, registers a book |
+| POST | `/apis/v1/books` | 201, registers a book. Role `admin` only (403 otherwise) |
 | GET | `/apis/v1/books` | 200, `Page<Book>` |
 | POST | `/apis/v1/registrations` | 201, **public** self-registration: creates the Keycloak user (Admin API) + Borrower; 409 `EMAIL_ALREADY_REGISTERED` |
 | POST | `/apis/v1/borrowers` | 200, registers a borrower |
-| GET | `/apis/v1/me` | 200, role `user` or `admin`: the same profile for everybody `{userId, firstname, lastname, email, mobile, borrower}` (`mobile` is the Borrower's, null without one). `borrower` (`BorrowerProfile`) is `{id, borrowedCount, maxItems, remainingSlots}` for a caller with role `user` (created on the first call, US-02.4) and `null` otherwise. The web app calls it after login |
+| GET | `/apis/v1/me` | 200, role `user` or `admin` (a token with neither gets 403): the same profile for everybody `{userId, firstname, lastname, email, roles, mobile, borrower}`. `roles` lists `user` / `admin` as far as the caller has them (the web app shows or hides admin features with it); `mobile` is the Borrower's, null without one. `borrower` (`BorrowerProfile`) is `{id, borrowedCount, maxItems, remainingSlots}` for a caller with role `user` (created on the first call, US-02.4) and `null` otherwise. The web app calls it after login |
 | POST | `/apis/v1/borrowers/{borrower-id}/books` | 200 (empty body), borrow (`{"bookId": "<uuid>"}`). 409 body `BOOK_NOT_AVAILABLE` or `BORROW_LIMIT_REACHED` (max 3 items, `app.library.max-items-per-borrower`) |
 | DELETE | `/apis/v1/borrowers/{borrower-id}/books/{book-id}` | 200, return |
 
@@ -62,8 +62,8 @@ The body for 404/409/500 is the plain message string.
 - Open without a token: `/swagger-ui.html`, `/swagger-ui/**`, `/v3/api-docs/**`, `/h2-console/**`, all `OPTIONS`, `POST /apis/v1/registrations`.
 - Roles come from `realm_access.roles` (`user` → `ROLE_USER`, `admin` → `ROLE_ADMIN`, converter in `SecurityConfig`).
   Role rules exist **only** for `GET /apis/v1/me` and `POST .../borrowers/{id}/books` (`user` or `admin`) and
-  `DELETE .../borrowers/{id}/books/{book-id}` (`admin`); a token without the role → 403. Tests use
-  `jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))`. All other endpoints (books, borrowers) still just need a valid token (E01 adds the rest).
+  `POST /apis/v1/books`, `DELETE .../borrowers/{id}/books/{book-id}` (`admin`); a token without the role → 403. Tests use
+  `jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))`. All other endpoints (`GET /books`, `POST /borrowers`) still just need a valid token (E01 adds the rest).
 - Caller context: `CurrentUserInterceptor` (all `/apis/**`) puts the token details (`CurrentUser`: `Jwt`, authorities, `isUser()`/`isAdmin()`) into a `ThreadLocal`
   (`CurrentUserHolder.get()`/`require()`) and clears it after the request. Empty when the request has no token. Use it instead of reading the security context in controllers.
 - Borrower provisioning (US-02.4): `BorrowerProvisioningInterceptor` (registered in `WebConfig` for borrow only, after `CurrentUserInterceptor`; `GET /me` calls the service itself because it returns the Borrower)

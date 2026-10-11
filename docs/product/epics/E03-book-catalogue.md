@@ -25,7 +25,7 @@ As a user, I want to search by title, author or ISBN and filter to "available on
 - `GET /apis/v1/books?q=…&available=true`: case-insensitive *contains* on title/author, exact match on ISBN.
 - Search box is debounced (300 ms). The query is kept in the URL.
 
-### US-03.4 Admin: register a book (FE · S) · [SCRUM-28](https://tharangage.atlassian.net/browse/SCRUM-28)
+### US-03.4 Admin: register a book (FE · S) · [SCRUM-28](https://tharangage.atlassian.net/browse/SCRUM-28) – *implemented, see "Implementation notes" below*
 As an admin, I want to add a book copy from the web app, so that I don't need Swagger for daily work.
 - "Add book" form (ISBN, title, author), visible only to `admin`.
 - 409 for an ISBN with a different title/author shows the API message next to the fields.
@@ -35,3 +35,11 @@ As an admin, I want to add a book copy from the web app, so that I don't need Sw
 As the library, I want two concurrent registrations of a new ISBN to keep the title/author rule.
 - Option: an `isbn_title` table with ISBN as primary key holding title/author (or a pessimistic lock on ISBN). Concurrency test proves only one variant survives.
 - Removes the known issue from `.claude/CLAUDE.md`.
+
+## Implementation notes
+**US-03.4 Admin: register a book** (branch `feature/US-03.4-admin-add-book`)
+- Backend: `POST /apis/v1/books` now needs the role `admin` (403 for a user or a token without roles, 401 without a token). `GET /apis/v1/books` is unchanged (any valid token). Before this change any logged-in user could register books.
+- `GET /apis/v1/me` returns `roles` (`["user", "admin"]` as far as the caller has them; other Keycloak roles are left out), so the web app can show admin features. The server still enforces every role rule: hiding a link is only courtesy.
+- Web app: page `/books/new` (inside `RequireAuth` and `RequireAdmin`; others see "You don't have access"). Fields ISBN, title, author with the same rules as the API, inline errors linked with `aria-describedby`, submit disabled while sending, field errors of a 400 next to their fields, the API message of a 409 ("Title and Author should be same for same ISBN") in an alert above the form.
+- After a success the book list is reloaded and a status line offers *Add another copy* (sends the same values again, counting copies in a row), *Add a different book* (clears the form) and a link back to the books.
+- An *Add book* link is shown to admins in the header navigation and on the Books page.

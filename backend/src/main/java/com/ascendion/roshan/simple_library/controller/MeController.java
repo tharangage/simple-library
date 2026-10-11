@@ -40,6 +40,6 @@ public class MeController {
             borrower = BorrowerProfile.of(entity, bookBorrowerService.borrowedCount(entity.getId()),
                     bookBorrowerService.maxItemsPerBorrower());
         }
-        return UserProfileResponse.of(caller.jwt(), mobile, borrower);
+        return UserProfileResponse.of(caller.jwt(), caller.roles(), mobile, borrower);
     }
 }

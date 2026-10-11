@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react'
 import { useAuth } from 'react-oidc-context'
-import { useSearchParams } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { ConfirmDialog } from '../../components/ConfirmDialog.jsx'
 import { Pagination } from '../../components/Pagination.jsx'
 import { useCurrentUser } from '../user/useCurrentUser.js'
+import { useIsAdmin } from '../user/useIsAdmin.js'
 import { BOOK_STATUS, getBookStatus } from './bookStatus.js'
 import { StatusBadge } from './StatusBadge.jsx'
 import { useBooks } from './useBooks.js'
@@ -44,6 +45,7 @@ export function BooksPage() {
   // The user's Borrower and item counts. Without a Borrower (admin only, or still loading) there are no Borrow buttons.
   const borrower = useCurrentUser().data?.borrower
   const borrow = useBorrowBook()
+  const { isAdmin } = useIsAdmin()
   const [bookToBorrow, setBookToBorrow] = useState(null)
   const headingRef = useRef(null)
   const canBorrow = Boolean(borrower?.id)
@@ -77,6 +79,11 @@ export function BooksPage() {
         <h1 ref={headingRef} tabIndex={-1}>
           Books
         </h1>
+        {isAdmin && (
+          <Link to="/books/new" className="button-link">
+            Add book
+          </Link>
+        )}
         {data && data.totalElements > 0 && (
           <p className="muted" aria-live="polite">
             {describeRange(data)}

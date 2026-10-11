@@ -181,6 +181,18 @@ describe('BooksPage borrowing', () => {
     expect(screen.queryByRole('button', { name: 'Borrow Emma' })).not.toBeInTheDocument()
   })
 
+  it('shows an Add book link to an admin and none to a user', async () => {
+    vi.mocked(fetchMe).mockResolvedValue({ userId: 'u-admin', roles: ['admin'], borrower: null })
+    const { unmount } = renderPage()
+    expect(await screen.findByRole('link', { name: 'Add book' })).toHaveAttribute('href', '/books/new')
+    unmount()
+
+    vi.mocked(fetchMe).mockResolvedValue({ ...borrower(), roles: ['user'] })
+    renderPage()
+    await screen.findByRole('button', { name: 'Borrow Dune' })
+    expect(screen.queryByRole('link', { name: 'Add book' })).not.toBeInTheDocument()
+  })
+
   it('shows no Borrow buttons to a user without a borrower record (admin only)', async () => {
     vi.mocked(fetchMe).mockResolvedValue(adminOnly)
     renderPage()

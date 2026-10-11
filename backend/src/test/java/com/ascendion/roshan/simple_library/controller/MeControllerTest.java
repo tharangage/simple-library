@@ -101,6 +101,8 @@ class MeControllerTest {
 
         mockMvc.perform(get("/apis/v1/me").with(jwt().authorities(USER, ADMIN)))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.roles[0]").value("user"))
+                .andExpect(jsonPath("$.roles[1]").value("admin"))
                 .andExpect(jsonPath("$.borrower.id").value("b-1"));
     }
 
@@ -113,6 +115,8 @@ class MeControllerTest {
                 .andExpect(jsonPath("$.userId").value("kc-2"))
                 .andExpect(jsonPath("$.firstname").value("Ada"))
                 .andExpect(jsonPath("$.email").value("ada@example.com"))
+                .andExpect(jsonPath("$.roles[0]").value("admin"))
+                .andExpect(jsonPath("$.roles.length()").value(1))
                 .andExpect(jsonPath("$.mobile").doesNotExist())
                 .andExpect(jsonPath("$.borrower").doesNotExist());
 

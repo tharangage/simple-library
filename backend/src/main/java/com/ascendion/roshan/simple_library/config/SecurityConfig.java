@@ -47,6 +47,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Self-registration: a visitor has no account, so no token yet.
                         .requestMatchers(HttpMethod.POST, "/apis/v1/registrations").permitAll()
+                        // Registering a book is a library-desk action. Listing books needs only a valid token.
+                        .requestMatchers(HttpMethod.POST, "/apis/v1/books").hasRole("ADMIN")
                         // Returning a book is a library-desk action: users cannot return books themselves.
                         .requestMatchers(HttpMethod.DELETE, "/apis/v1/borrowers/*/books/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/apis/v1/borrowers/*/books").hasAnyRole("USER", "ADMIN")
