@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { apiGet } from './client.js'
-import { fetchBooks, normalizePage } from './books.js'
+import { apiGet, apiPost } from './client.js'
+import { createBook, fetchBooks, normalizePage } from './books.js'
 
-vi.mock('./client.js', () => ({ apiGet: vi.fn() }))
+vi.mock('./client.js', () => ({ apiGet: vi.fn(), apiPost: vi.fn() }))
 
 describe('fetchBooks', () => {
   it('asks for one page of books and returns it normalised', async () => {
@@ -12,6 +12,21 @@ describe('fetchBooks', () => {
 
     expect(apiGet).toHaveBeenCalledWith('/apis/v1/books', { token: 't', params: { page: 0, size: 20, sort: 'title,asc' } })
     expect(page.items).toEqual([{ id: '1' }])
+  })
+})
+
+describe('createBook', () => {
+  it('posts the book to the books endpoint with the token', async () => {
+    vi.mocked(apiPost).mockResolvedValue({ id: 'bk-1' })
+
+    const created = await createBook({ token: 't', isbn: '978-955-675-510-7', title: 'Dune', author: 'Frank Herbert' })
+
+    expect(apiPost).toHaveBeenCalledWith(
+      '/apis/v1/books',
+      { isbn: '978-955-675-510-7', title: 'Dune', author: 'Frank Herbert' },
+      { token: 't' },
+    )
+    expect(created).toEqual({ id: 'bk-1' })
   })
 })
 

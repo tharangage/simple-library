@@ -29,6 +29,8 @@ CodeQL also scans the JavaScript for security problems, and Dependabot opens wee
 
 The Books page has a *Borrow* button on available books (US-04.2): confirmation dialog, toast, list and counts reload, disabled at the limit of 3. The header shows "x of 3 used". Both use the `borrower` section of `GET /apis/v1/me`; a user without one (admin only) sees no Borrow buttons.
 
+Admins see an *Add book* link (header and Books page) to `/books/new` (US-03.4): a form for ISBN, title and author, with *Add another copy* after a success. The page is wrapped in `RequireAdmin`, which reads `roles` from `GET /apis/v1/me`; the API itself answers 403 to anybody else.
+
 After login the app calls `GET /apis/v1/me` (`features/user/useCurrentUser.js`, mounted in `Layout`). It is the same call for every user: the identity from the token plus a `borrower` section that is `null` for an admin without the `user` role. For a user it makes the backend create the Borrower on the first sign-in (US-02.4). In development builds the response is also logged to the browser console (`[library] GET /apis/v1/me`). The result is cached under the query key `['currentUser', sub]` for pages to use later.
 
 Settings live in `.env` (API URL, Keycloak URL, realm, client id), created from `.env.example`. `.env` is not committed.

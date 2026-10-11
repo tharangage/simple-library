@@ -1,6 +1,8 @@
 import { createBrowserRouter } from 'react-router'
+import { RequireAdmin } from '../auth/RequireAdmin.jsx'
 import { RequireAuth } from '../auth/RequireAuth.jsx'
 import { SigninCallbackPage } from '../auth/SigninCallbackPage.jsx'
+import { AddBookPage } from '../features/books/AddBookPage.jsx'
 import { BooksPage } from '../features/books/BooksPage.jsx'
 import { RegisterPage } from '../features/registration/RegisterPage.jsx'
 import { HomePage } from './HomePage.jsx'
@@ -20,6 +22,16 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <BooksPage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'books/new',
+        element: (
+          <RequireAuth>
+            <RequireAdmin>
+              <AddBookPage />
+            </RequireAdmin>
           </RequireAuth>
         ),
       },

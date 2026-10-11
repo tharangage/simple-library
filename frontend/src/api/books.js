@@ -1,4 +1,4 @@
-import { apiGet } from './client.js'
+import { apiGet, apiPost } from './client.js'
 
 /**
  * GET /apis/v1/books – one page of books.
@@ -24,4 +24,13 @@ export function normalizePage(body) {
     totalElements: meta.totalElements ?? 0,
     totalPages: meta.totalPages ?? 0,
   }
+}
+
+/**
+ * POST /apis/v1/books – register one copy of a book (role `admin`). Answers 201 with the new book.
+ * 400 gives {field: message} (see ApiError.fieldErrors); 409 means the ISBN exists with another title or author.
+ * @param {{ token: string, isbn: string, title: string, author: string }} args
+ */
+export function createBook({ token, isbn, title, author }) {
+  return apiPost('/apis/v1/books', { isbn, title, author }, { token })
 }

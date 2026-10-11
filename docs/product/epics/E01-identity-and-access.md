@@ -31,7 +31,7 @@ As the library, I want each endpoint restricted to the right role, so that users
 |---|---|
 | `POST /apis/v1/registrations` | public (no token) |
 | `GET /apis/v1/books` | `user`, `admin` |
-| `POST /apis/v1/books` | `admin` |
+| `POST /apis/v1/books` | `admin` (done with US-03.4) |
 | `GET/POST/DELETE /apis/v1/me/**` (loans, reservations) | `user` |
 | `DELETE /apis/v1/loans/{bookId}` (return), `GET /apis/v1/loans` | `admin` |
 | Swagger, `/v3/api-docs/**`, `OPTIONS` | public |

@@ -112,7 +112,9 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outlin
 .topbar .button--primary:hover:not(:disabled) { background: #eff6ff; }
 .topbar :focus-visible { outline-color: #fff; }
 .content { max-width: 1000px; margin: 0 auto; padding: 2rem 1rem 3rem; }
-.page-header { margin-bottom: 1.25rem; }
+.page-header { margin-bottom: 1.25rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+.page-header h1 { margin: 0; }
+.page-header .muted { flex-basis: 100%; }
 
 /* Home */
 .welcome { max-width: 40rem; margin: 3rem auto; text-align: center; display: grid; justify-items: center; gap: 1.25rem; }
@@ -203,3 +205,9 @@ button[aria-disabled='true'] { opacity: 0.5; cursor: not-allowed; }
 .toast--success { border-left: 4px solid var(--available-text); }
 .toast--error { background: var(--error-bg); color: var(--error-text); border-color: transparent; border-left: 4px solid var(--field-error); }
 .toast__close { margin-left: auto; border: none; background: none; font-size: 1.25rem; line-height: 1; cursor: pointer; color: inherit; padding: 0 0.25rem; }
+
+/* Add book (US-03.4) */
+.message--success { background: var(--available-bg); color: var(--available-text); border-color: transparent; }
+.message--success p { margin: 0 0 0.5rem; }
+.form__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin: 0; }
+.topbar nav { display: flex; gap: 1rem; }
