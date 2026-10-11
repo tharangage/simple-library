@@ -42,7 +42,7 @@ Other: `backend/Dockerfile`, `docker-compose.yaml` (app only), `keycloak/docker-
 | GET | `/apis/v1/books` | 200, `Page<Book>` |
 | POST | `/apis/v1/registrations` | 201, **public** self-registration: creates the Keycloak user (Admin API) + Borrower; 409 `EMAIL_ALREADY_REGISTERED` |
 | POST | `/apis/v1/borrowers` | 200, registers a borrower |
-| GET | `/apis/v1/me` | 200, role `user` or `admin`: the same profile for everybody `{userId, firstname, lastname, email, borrower}`. `borrower` (`BorrowerProfile`) is `{id, mobile, borrowedCount, maxItems, remainingSlots}` for a caller with role `user` (created on the first call, US-02.4) and `null` otherwise. The web app calls it after login |
+| GET | `/apis/v1/me` | 200, role `user` or `admin`: the same profile for everybody `{userId, firstname, lastname, email, mobile, borrower}` (`mobile` is the Borrower's, null without one). `borrower` (`BorrowerProfile`) is `{id, borrowedCount, maxItems, remainingSlots}` for a caller with role `user` (created on the first call, US-02.4) and `null` otherwise. The web app calls it after login |
 | POST | `/apis/v1/borrowers/{borrower-id}/books` | 200 (empty body), borrow (`{"bookId": "<uuid>"}`). 409 body `BOOK_NOT_AVAILABLE` or `BORROW_LIMIT_REACHED` (max 3 items, `app.library.max-items-per-borrower`) |
 | DELETE | `/apis/v1/borrowers/{borrower-id}/books/{book-id}` | 200, return |
 

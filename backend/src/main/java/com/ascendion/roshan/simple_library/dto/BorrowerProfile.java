@@ -4,13 +4,11 @@ import com.ascendion.roshan.simple_library.entity.Borrower;
 
 /**
  * What only a library member has, as the {@code borrower} section of {@link UserProfileResponse}: the Borrower
- * id (used in the borrow path), the mobile number and how many books they hold ("x of 3 used").
- * The name and email are not repeated here: {@link UserProfileResponse} already carries them.
- * Only returned to the owner, so the mobile number is included.
+ * id (used in the borrow path) and how many books they hold ("x of 3 used").
+ * Name, email and mobile are not repeated here: they are at the top level of {@link UserProfileResponse}.
  */
 public record BorrowerProfile(
         String id,
-        String mobile,
         int borrowedCount,
         int maxItems,
         int remainingSlots) {
@@ -20,7 +18,6 @@ public record BorrowerProfile(
         final int borrowed = Math.toIntExact(borrowedCount);
         return new BorrowerProfile(
                 borrower.getId(),
-                borrower.getMobile(),
                 borrowed,
                 maxItems,
                 Math.max(0, maxItems - borrowed));

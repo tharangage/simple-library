@@ -33,11 +33,13 @@ public class MeController {
     public UserProfileResponse me() {
         final CurrentUser caller = CurrentUserHolder.require();
         BorrowerProfile borrower = null;
+        String mobile = null;
         if (caller.isUser()) {
             final Borrower entity = provisioningService.getOrCreate(caller.jwt());
+            mobile = entity.getMobile();
             borrower = BorrowerProfile.of(entity, bookBorrowerService.borrowedCount(entity.getId()),
                     bookBorrowerService.maxItemsPerBorrower());
         }
-        return UserProfileResponse.of(caller.jwt(), borrower);
+        return UserProfileResponse.of(caller.jwt(), mobile, borrower);
     }
 }

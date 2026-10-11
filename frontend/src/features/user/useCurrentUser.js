@@ -5,8 +5,8 @@ import { fetchMe } from '../../api/me.js'
 
 /**
  * The signed-in user's profile (GET /apis/v1/me), loaded once after login and cached under ['currentUser', sub].
- * Same shape for every user: `data.userId`, `data.firstname`, `data.lastname`, `data.email`, and `data.borrower`.
- * `data.borrower` is the library membership (`id`, `mobile`, `borrowedCount`, `maxItems`, `remainingSlots`); the first
+ * Same shape for every user: `data.userId`, `data.firstname`, `data.lastname`, `data.email`, `data.mobile` and `data.borrower`.
+ * `data.borrower` is the library membership (`id`, `borrowedCount`, `maxItems`, `remainingSlots`); the first
  * call makes the backend create it for a user with the role `user` (US-02.4). It is null for someone who is not a
  * member (a desk-only admin), so pages check `data?.borrower` before showing borrower features.
  *
