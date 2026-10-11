@@ -35,8 +35,15 @@ describe('Toast', () => {
     await user.click(screen.getByRole('button', { name: 'ok' }))
     await user.click(screen.getByRole('button', { name: 'bad' }))
 
-    expect(screen.getByRole('status')).toHaveTextContent('Saved')
-    expect(screen.getByRole('alert')).toHaveTextContent('Failed')
+    expect(screen.getByText('Saved').closest('[aria-live]')).toHaveAttribute('aria-live', 'polite')
+    expect(screen.getByText('Failed').closest('[aria-live]')).toHaveAttribute('aria-live', 'assertive')
+  })
+
+  it('keeps both live regions in the page before any message, so the first message is announced', () => {
+    const { container } = renderToasts()
+
+    expect(container.ownerDocument.querySelector('[aria-live="polite"]')).toBeEmptyDOMElement()
+    expect(container.ownerDocument.querySelector('[aria-live="assertive"]')).toBeEmptyDOMElement()
   })
 
   it('can be dismissed by hand', async () => {
@@ -46,18 +53,18 @@ describe('Toast', () => {
 
     await user.click(screen.getByRole('button', { name: 'Dismiss message' }))
 
-    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.queryByText('Saved')).not.toBeInTheDocument()
   })
 
   it('goes away by itself after a few seconds', () => {
     vi.useFakeTimers()
     renderToasts()
     act(() => screen.getByRole('button', { name: 'ok' }).click())
-    expect(screen.getByRole('status')).toBeInTheDocument()
+    expect(screen.getByText('Saved')).toBeInTheDocument()
 
     act(() => vi.advanceTimersByTime(6100))
 
-    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.queryByText('Saved')).not.toBeInTheDocument()
   })
 
   it('refuses to be used without a provider', () => {

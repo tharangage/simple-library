@@ -208,7 +208,8 @@ describe('BooksPage borrowing', () => {
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Borrow' }))
 
     expect(borrowBook).toHaveBeenCalledWith({ token: 'test-token', borrowerId: 'b-1', bookId: '1' })
-    expect(await screen.findByRole('status')).toHaveTextContent('Dune')
+    expect(await screen.findByText(/is yours/)).toHaveTextContent('Dune')
+    expect(screen.getByRole('heading', { name: 'Books' })).toHaveFocus()
     await waitFor(() => expect(vi.mocked(fetchBooks).mock.calls.length).toBeGreaterThan(booksCalls))
     await waitFor(() => expect(vi.mocked(fetchMyBorrower).mock.calls.length).toBeGreaterThan(userCalls))
   })
@@ -236,7 +237,7 @@ describe('BooksPage borrowing', () => {
 
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Borrow' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Someone else has just borrowed this book')
+    expect(await screen.findByText(/Someone else has just borrowed this book/)).toBeInTheDocument()
     await waitFor(() => expect(vi.mocked(fetchBooks).mock.calls.length).toBeGreaterThan(booksCalls))
   })
 
@@ -248,6 +249,6 @@ describe('BooksPage borrowing', () => {
 
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Borrow' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('limit of 3 books')
+    expect(await screen.findByText(/limit of 3 books/)).toBeInTheDocument()
   })
 })

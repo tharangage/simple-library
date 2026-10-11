@@ -21,8 +21,9 @@ export function useCurrentUser({ log = false } = {}) {
     queryKey: ['currentUser', sub],
     queryFn: () => fetchMyBorrower({ token }),
     enabled: Boolean(token),
-    // Fresh until something (like a borrow) invalidates it.
-    staleTime: Infinity,
+    // Fresh for a minute, or until something (like a borrow) invalidates it. An admin can return a book
+    // meanwhile, so the counts are asked for again when a page that shows them opens later.
+    staleTime: 60 * 1000,
   })
 
   const { data, error } = query

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useAuth } from 'react-oidc-context'
 import { useSearchParams } from 'react-router'
 import { ConfirmDialog } from '../../components/ConfirmDialog.jsx'
@@ -45,13 +45,18 @@ export function BooksPage() {
   const { data: borrower } = useCurrentUser()
   const borrow = useBorrowBook()
   const [bookToBorrow, setBookToBorrow] = useState(null)
+  const headingRef = useRef(null)
   const canBorrow = Boolean(borrower?.id)
   const atLimit = canBorrow && borrower.remainingSlots <= 0
 
   const confirmBorrow = () => {
     const book = bookToBorrow
     setBookToBorrow(null)
-    borrow.mutate({ borrowerId: borrower.id, book, maxItems: borrower.maxItems })
+    borrow.mutate(
+      { borrowerId: borrower.id, book, maxItems: borrower.maxItems },
+      // The borrowed row no longer has a Borrow button, so keyboard and screen-reader users continue from the heading.
+      { onSuccess: () => headingRef.current?.focus() },
+    )
   }
 
   const goToPage = (newPage) => {
@@ -69,7 +74,9 @@ export function BooksPage() {
   return (
     <section className="books">
       <header className="page-header">
-        <h1>Books</h1>
+        <h1 ref={headingRef} tabIndex={-1}>
+          Books
+        </h1>
         {data && data.totalElements > 0 && (
           <p className="muted" aria-live="polite">
             {describeRange(data)}

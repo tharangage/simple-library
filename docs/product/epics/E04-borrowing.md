@@ -40,6 +40,7 @@ Decisions taken while implementing US-04.1 and US-04.2 (branch `feature/US-04.1-
 - Limit: `app.library.max-items-per-borrower` (default 3). It counts the books a borrower holds; reservations are added with E05.
 - Errors are plain-text bodies until US-08.2: 409 `BOOK_NOT_AVAILABLE` (book already borrowed), 409 `BORROW_LIMIT_REACHED`, 404 `Borrower not found` / `Book not found`. The book check comes before the limit check.
 - Concurrency: the borrower row and then the book row are locked (`SELECT ... FOR UPDATE`). An integration test sends 8 parallel borrows for one borrower and expects exactly 3 to succeed. Return only locks the book, so there is no deadlock.
+- `app.library.max-items-per-borrower` must be at least 1; a smaller value stops the application at startup. Both row locks wait at most 3 seconds (`jakarta.persistence.lock.timeout`), then the request fails with the lock exception, answered as 409.
 - `GET /apis/v1/borrowers/me` also returns `borrowedCount`, `maxItems` and `remainingSlots`. The "x of 3 used" figure comes from there, not from `GET /apis/v1/me` (which is the generic token profile, see ADR-001).
 
 **Web app (US-04.2)**
@@ -47,6 +48,7 @@ Decisions taken while implementing US-04.1 and US-04.2 (branch `feature/US-04.1-
 - Success: a toast, then the book list and the user's counts are loaded again. Failure: a toast with a readable message (`BORROW_LIMIT_REACHED`, `BOOK_NOT_AVAILABLE`, 404, 403, 401, network); after `BOOK_NOT_AVAILABLE` the list is reloaded as well.
 - At the limit the button stays visible but is disabled (`aria-disabled`), with the tooltip and screen-reader text "You have reached the limit of 3 books." (the number comes from the server).
 - The header shows "x of 3 used" once the Borrower is loaded.
+- After a successful borrow focus moves to the page heading (the row lost its button). The toast messages go into two live regions that are always in the page, so screen readers announce them. The counts are cached for 60 seconds and reload after a borrow.
 
 **Not done yet**
 - "Ready for you" rows and the reservation rules wait for E05; the refresh of "My books" waits for US-04.3.
