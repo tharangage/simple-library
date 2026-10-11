@@ -56,3 +56,23 @@ As the backend, I want to reject tokens that weren't issued for this API, so tha
 As an API user, I want to log in from Swagger UI's *Authorize* button with my library account, so that I can try every endpoint my role allows.
 - Swagger UI keeps client `library-swagger` and realm `library` (already working). Each operation shows its required role in the description.
 - `POST /apis/v1/registrations` is marked as needing no auth.
+
+### US-01.7 Borrow on behalf of another borrower: admin only (BE · S) · [SCRUM-62](https://tharangage.atlassian.net/browse/SCRUM-62)
+As the library, I want only admins to borrow on behalf of another borrower, so that a user cannot create loans under someone else's name.
+- Origin: accepted gap of US-02.4 ([ADR-001](../../decisions/ADR-001-borrower-provisioning.md)). Today `POST /apis/v1/borrowers/{borrower-id}/books` does not compare `{borrower-id}` with the caller, so any `user` can borrow for any existing borrower id.
+- A `user` (not admin) may borrow only for their own Borrower; another id → 403. An `admin` may borrow for any existing borrower (library desk); unknown id → 404.
+- Decide the rule for a token with both `user` and `admin` (admins also get `user` from the realm default role): they must still be able to borrow for others at the desk.
+- `@WebMvcTest` tests: user-own, user-other, admin-other, admin+user-other. ADR-001 and `.claude/CLAUDE.md` (borrow rule) are updated.
+- Overlaps US-01.4 and US-04.1, which remove the borrower id from the path. If they land first, close this story as superseded.
+
+### US-01.8 Desk-only admin accounts are not created as borrowers (BE/IAM · S) · [SCRUM-63](https://tharangage.atlassian.net/browse/SCRUM-63)
+As the library, I want desk-only staff accounts to stay out of the borrower table, so that borrower records only exist for real library members.
+- Origin: accepted gap of US-02.4. `user` is a realm default role, so an admin created in the Keycloak console also gets `user` and is provisioned as a Borrower on their first call to `/apis/v1/borrowers/me`, `/apis/v1/me` or borrow.
+- Options, to decide in refinement: (1) Keycloak only: unassign `default-roles-library` from desk-only admins, assign `admin` alone, and document it in `docs/setup/`; (2) backend rule: a caller with `admin` gets no Borrower even with `user` (`BorrowerProvisioningInterceptor`, `GET /borrowers/me`, tests, ADR-001); (3) keep as is.
+- Done when a desk-only admin has no Borrower row after using the API and a self-registered user still gets `user` and a Borrower.
+
+### US-01.9 `GET /me` must not fail when Borrower provisioning fails (BE · S) · [SCRUM-64](https://tharangage.atlassian.net/browse/SCRUM-64)
+As a user, I want `GET /apis/v1/me` to show my profile even when my Borrower cannot be created yet, so that a provisioning problem does not break a read-only call.
+- Origin: accepted gap of US-02.4. The interceptor provisions before `/me`, so a 409 (token email matches an older Borrower with `email_verified` not true, token without name and email, email clash) also fails `/me`. `GET /me` is also a read with a side effect.
+- `/me` returns the token profile even when provisioning throws; the failure is logged without personal data. Provisioning stays strict on borrow and on `GET /borrowers/me`. Alternative: stop provisioning on `/me` altogether.
+- Tests cover `/me` with a provisioning failure; the ADR-001 endpoint table is updated.
