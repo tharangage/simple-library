@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -33,7 +34,7 @@ public class BookControllerTest {
 
     @Test
     public void testRegisterBooksApi() throws Exception {
-        mockMvc.perform(post("/apis/v1/books").with(jwt())
+        mockMvc.perform(post("/apis/v1/books").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                         {
@@ -51,9 +52,39 @@ public class BookControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    private static final String VALID_BOOK = """
+            {"isbn": "978-955-675-511-4", "title": "Role Title", "author": "Role Author"}
+            """;
+
+    @Test
+    void registerBook_noToken_returns401() throws Exception {
+        mockMvc.perform(post("/apis/v1/books").contentType(MediaType.APPLICATION_JSON).content(VALID_BOOK))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void registerBook_userWithoutAdminRole_returns403() throws Exception {
+        mockMvc.perform(post("/apis/v1/books").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                        .contentType(MediaType.APPLICATION_JSON).content(VALID_BOOK))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void registerBook_tokenWithoutAnyRole_returns403() throws Exception {
+        mockMvc.perform(post("/apis/v1/books").with(jwt())
+                        .contentType(MediaType.APPLICATION_JSON).content(VALID_BOOK))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void listBooks_userRole_stillAllowed() throws Exception {
+        mockMvc.perform(get("/apis/v1/books").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))))
+                .andExpect(status().isOk());
+    }
+
     @Test
     void registerBook_isbn10EndingInX_returns201WithBookJson() throws Exception {
-        mockMvc.perform(post("/apis/v1/books").with(jwt())
+        mockMvc.perform(post("/apis/v1/books").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                         {"isbn": "0-8044-2957-X", "title": "Integration Title", "author": "Integration Author"}
@@ -67,7 +98,7 @@ public class BookControllerTest {
 
     @Test
     void registerBook_invalidIsbn_returns400WithFieldMap() throws Exception {
-        mockMvc.perform(post("/apis/v1/books").with(jwt())
+        mockMvc.perform(post("/apis/v1/books").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                         {"isbn": "12345", "title": "T", "author": "A"}
@@ -78,7 +109,7 @@ public class BookControllerTest {
 
     @Test
     void registerBook_isbnLongerThan17Characters_returns400() throws Exception {
-        mockMvc.perform(post("/apis/v1/books").with(jwt())
+        mockMvc.perform(post("/apis/v1/books").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                         {"isbn": "----------0134685997", "title": "T", "author": "A"}
