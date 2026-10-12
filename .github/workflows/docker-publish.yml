@@ -1,0 +1,138 @@
+# Publishes the two Docker images to Docker Hub:
+#   <DOCKERHUB_USERNAME>/simple-library-api   (backend/, Spring Boot)
+#   <DOCKERHUB_USERNAME>/simple-library-web   (frontend/, React + nginx)
+#
+# When it runs
+#   - push to master  -> tags `latest` and `sha-<short commit>`
+#   - push of a tag v1.2.3 -> tags `1.2.3` and `1.2` (and `sha-...`)
+#   - manually (Actions -> Docker publish -> Run workflow), on the branch you pick
+# It never runs for pull requests, so forks and unreviewed code cannot reach the secrets.
+#
+# One-time setup (GitHub: Settings -> Secrets and variables -> Actions -> New repository secret):
+#   DOCKERHUB_USERNAME  your Docker Hub user (or organisation) name
+#   DOCKERHUB_TOKEN     a Docker Hub access token with Read & Write scope (hub.docker.com -> Account settings -> Personal access tokens)
+# Details: docs/setup/docker-hub.md
+name: Docker publish
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # The images are only published when the tests pass for the same commit.
+  test-backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Make Maven wrapper executable
+        run: chmod +x mvnw
+
+      - name: Build and test
+        run: ./mvnw -B -ntp verify
+
+  test-frontend:
+    name: Frontend tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+  publish:
+    name: Publish ${{ matrix.name }} image
+    needs: [test-backend, test-frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: api
+            context: backend
+          - name: web
+            context: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check that the Docker Hub secrets exist
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -z "$DOCKERHUB_USERNAME" ] || [ -z "$DOCKERHUB_TOKEN" ]; then
+            echo "::error::Add the repository secrets DOCKERHUB_USERNAME and DOCKERHUB_TOKEN (see docs/setup/docker-hub.md)."
+            exit 1
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Works out the tags and the OCI labels (source repository, commit, ...) from the branch or tag.
+      - name: Image name, tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/simple-library-${{ matrix.name }}
+          flavor: latest=false
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=sha-
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      # linux/amd64 only. To add Apple-silicon / ARM servers, add docker/setup-qemu-action and
+      # `platforms: linux/amd64,linux/arm64` (the backend build under emulation takes noticeably longer).
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}

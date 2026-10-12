@@ -21,7 +21,7 @@ Source: [`simple-library-requirement-in-a-nutshell.md`](simple-library-requireme
 | 14 | ReactJS + JavaScript (no TypeScript) web app | `frontend/` folder exists but is empty | E07 + FE stories in E02–E06 |
 | 15 | Configurable environments / 12-factor | Profiles exist; default profile conflict (`local` vs `h2`) | D-06 |
 | 16 | Java 25 (bonus) | Java 17 (project hard rule) | D-07 |
-| 17 | Containerization, declarative CI/CD | Dockerfile, compose, k8s, GitHub Actions, Jenkinsfile (`-DskipTests`) | Frontend image + full stack → E10 |
+| 17 | Containerization, declarative CI/CD | Dockerfiles, compose, k8s, GitHub Actions (quality checks and Docker Hub publish; the Jenkinsfile was removed) | Frontend image + full stack → E10 |
 | 18 | Clear API docs, documented assumptions | README + Swagger; no assumptions register | US-10.2 |
 
 ## Things the requirement doesn't say (covered by assumptions in the backlog)
