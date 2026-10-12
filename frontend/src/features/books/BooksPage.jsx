@@ -10,7 +10,7 @@ import { StatusBadge } from './StatusBadge.jsx'
 import { useBooks } from './useBooks.js'
 import { useBorrowBook } from './useBorrowBook.js'
 
-export const PAGE_SIZE = 20
+export const PAGE_SIZE = 5
 
 // Columns the user may sort by. Anything else in the URL is ignored, because the backend
 // answers 400 for unknown sort fields.

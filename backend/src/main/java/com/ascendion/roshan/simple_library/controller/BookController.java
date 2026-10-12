@@ -33,7 +33,7 @@ public class BookController {
     }
 
     @GetMapping
-    public Page<BookResponse> listBooks(@ParameterObject @PageableDefault(size = 20) final Pageable pageable) {
+    public Page<BookResponse> listBooks(@ParameterObject @PageableDefault(size = 5) final Pageable pageable) {
         return bookService.listBooks(pageable).map(BookResponse::from);
     }
 
