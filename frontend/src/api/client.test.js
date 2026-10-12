@@ -96,11 +96,11 @@ describe('apiPost', () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ id: '1' }, 201))
     vi.stubGlobal('fetch', fetchMock)
 
-    const body = await apiPost('/apis/v1/registrations', { email: 'a@b.co' })
+    const body = await apiPost('/apis/v1/borrowers', { email: 'a@b.co' })
 
     expect(body).toEqual({ id: '1' })
     const [url, options] = fetchMock.mock.calls[0]
-    expect(url.toString()).toBe('http://api.test/apis/v1/registrations')
+    expect(url.toString()).toBe('http://api.test/apis/v1/borrowers')
     expect(options.method).toBe('POST')
     expect(options.headers['Content-Type']).toBe('application/json')
     expect(options.headers).not.toHaveProperty('Authorization')

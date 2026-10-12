@@ -1,6 +1,6 @@
 package com.ascendion.roshan.simple_library.service;
 
-import com.ascendion.roshan.simple_library.dto.RegistrationRequest;
+import com.ascendion.roshan.simple_library.dto.BorrowerCreateRequest;
 import com.ascendion.roshan.simple_library.entity.Borrower;
 import com.ascendion.roshan.simple_library.exception.EmailAlreadyRegisteredException;
 import com.ascendion.roshan.simple_library.exception.KeycloakAdminException;
@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class RegistrationServiceTest {
 
-    private static final RegistrationRequest REQUEST = new RegistrationRequest(
+    private static final BorrowerCreateRequest REQUEST = new BorrowerCreateRequest(
             " Ann ", "Lee", "Ann@Example.com ", "+14155550100", "s3cret-pass");
 
     @Mock

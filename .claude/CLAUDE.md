@@ -30,7 +30,7 @@ dto/         BookCreateRequest, BorrowerCreateRequest (Bean Validation), Borrowe
 entity/      Book, Borrower (UUID String ids, JPA auditing dates)
 exception/   NotFoundException, CustomResponseEntityExceptionHandler
 repository/  BookRepository, BorrowerRepository (JpaRepository<_, String>)
-service/     BookService, BorrowerService, BorrowedBookService, RegistrationService, KeycloakAdminClient (service account `library-backend`; secret `KEYCLOAK_ADMIN_CLIENT_SECRET`, see docs/setup/keycloak-registration.md)
+service/     BookService, BorrowedBookService, RegistrationService, KeycloakAdminClient (service account `library-backend`; secret `KEYCLOAK_ADMIN_CLIENT_SECRET`, see docs/setup/keycloak-registration.md)
 ```
 Other: `backend/Dockerfile`, `docker-compose.yaml` (app only), `keycloak/docker-compose.yml`
 (Keycloak + Postgres), `k8s/`, `Jenkinsfile`, `archive/` (old files — ignore).
@@ -40,8 +40,7 @@ Other: `backend/Dockerfile`, `docker-compose.yaml` (app only), `keycloak/docker-
 |---|---|---|
 | POST | `/apis/v1/books` | 201, registers a book. Role `admin` only (403 otherwise) |
 | GET | `/apis/v1/books` | 200, `Page<Book>` |
-| POST | `/apis/v1/registrations` | 201, **public** self-registration: creates the Keycloak user (Admin API) + Borrower; 409 `EMAIL_ALREADY_REGISTERED` |
-| POST | `/apis/v1/borrowers` | 200, registers a borrower |
+| POST | `/apis/v1/borrowers` | 201, **public** self-registration (`BorrowerCreateRequest`: firstName, lastName, email, mobile, password): creates the Keycloak user (Admin API) + Borrower and answers `BorrowerResponse` (no password); 409 `EMAIL_ALREADY_REGISTERED` |
 | GET | `/apis/v1/me` | 200, role `user` or `admin` (a token with neither gets 403): the same profile for everybody `{userId, firstname, lastname, email, roles, mobile, borrower}`. `roles` lists `user` / `admin` as far as the caller has them (the web app shows or hides admin features with it); `mobile` is the Borrower's, null without one. `borrower` (`BorrowerProfile`) is `{id, borrowedCount, maxItems, remainingSlots}` for a caller with role `user` (created on the first call, US-02.4) and `null` otherwise. The web app calls it after login |
 | POST | `/apis/v1/borrowed-books/{book-id}/borrowers/{borrower-id}` | 200 (empty body, no request body), borrow. 409 body `BOOK_NOT_AVAILABLE` or `BORROW_LIMIT_REACHED` (max 3 items, `app.library.max-items-per-borrower`) |
 | GET | `/apis/v1/borrowed-books?q=` | 200, `Page<BorrowedBookResponse>` of books that are out with the borrower's name and email (`q` matches book id, ISBN, title, borrower email; default 5 per page, newest first). Role `admin` only. Feeds the Returns page |
@@ -60,11 +59,11 @@ The body for 404/409/500 is the plain message string.
 
 ## Security
 - Stateless OAuth2 resource server; JWTs issued by Keycloak realm **`library`**.
-- Open without a token: `/swagger-ui.html`, `/swagger-ui/**`, `/v3/api-docs/**`, `/h2-console/**`, all `OPTIONS`, `POST /apis/v1/registrations`.
+- Open without a token: `/swagger-ui.html`, `/swagger-ui/**`, `/v3/api-docs/**`, `/h2-console/**`, all `OPTIONS`, `POST /apis/v1/borrowers` (self-registration).
 - Roles come from `realm_access.roles` (`user` → `ROLE_USER`, `admin` → `ROLE_ADMIN`, converter in `SecurityConfig`).
   Role rules exist **only** for `GET /apis/v1/borrowed-books` (`admin`), `GET /apis/v1/me` and `POST .../borrowed-books/{book-id}/borrowers/{id}` (`user` or `admin`) and
   `POST /apis/v1/books`, `DELETE .../borrowed-books/{book-id}/borrowers/{id}` (`admin`); a token without the role → 403. Tests use
-  `jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))`. All other endpoints (`GET /books`, `POST /borrowers`) still just need a valid token (E01 adds the rest).
+  `jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))`. All other endpoints (`GET /books`) still just need a valid token (E01 adds the rest).
 - Caller context: `CurrentUserInterceptor` (all `/apis/**`) puts the token details (`CurrentUser`: `Jwt`, authorities, `isUser()`/`isAdmin()`) into a `ThreadLocal`
   (`CurrentUserHolder.get()`/`require()`) and clears it after the request. Empty when the request has no token. Use it instead of reading the security context in controllers.
 - Borrower provisioning (US-02.4): `BorrowerProvisioningInterceptor` (registered in `WebConfig` for borrow only, after `CurrentUserInterceptor`; `GET /me` calls the service itself because it returns the Borrower)
@@ -127,7 +126,6 @@ Docker in WSL (compose project `keycloak`, network `keycloak_default`).
 ## Known issues (don't "fix" silently — mention them)
 - Default profile in `application.yaml` is **`local`** (PostgreSQL on localhost:5432, port 8081), not `h2`.
   This conflicts with the "H2 is the default" hard rule — decide which one is right. Tests use `@ActiveProfiles("h2")`.
-- `POST /apis/v1/borrowers` returns 200, not 201 like books.
 - `Book.isBorrowed` + Lombok produces getter `isBorrowed()` / setter `setBorrowed()`; JSON field is `borrowed`.
 - `GET /apis/v1/books` serializes `PageImpl` directly (Spring Data logs a "stability of the JSON structure" warning).
   Switching to `PagedModel` / `VIA_DTO` changes the JSON shape, so coordinate with the React app first.

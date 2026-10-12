@@ -122,7 +122,7 @@ describe('RegisterPage', () => {
     })
     expect(submitButton()).toBeDisabled()
 
-    finish({ id: '1', firstName: 'Ann' })
+    finish({ id: '1', firstname: 'Ann' })
     expect(await screen.findByRole('heading', { name: 'Account created' })).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('Welcome, Ann! You can now sign in with your email.')
     await userEvent.click(screen.getByRole('button', { name: 'Go to sign in' }))

@@ -54,7 +54,7 @@ flowchart TB
     end
     subgraph service
         BookService
-        BorrowerService
+        RegistrationService
         BorrowedBookService
     end
     subgraph repository
@@ -69,10 +69,10 @@ flowchart TB
     exh["exception<br/>CustomResponseEntityExceptionHandler<br/>NotFoundException"]
 
     BookController --> BookService
-    BorrowerController --> BorrowerService
+    BorrowerController --> RegistrationService
     BorrowedBookController --> BorrowedBookService
     BookService --> BookRepository
-    BorrowerService --> BorrowerRepository
+    RegistrationService --> BorrowerRepository
     BorrowedBookService --> BookRepository
     BorrowedBookService --> BorrowerRepository
     BookRepository --> Book
