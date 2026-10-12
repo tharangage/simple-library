@@ -62,6 +62,19 @@ describe('Layout', () => {
     expect(screen.getByRole('link', { name: 'Add book' })).toHaveAttribute('href', '/books/new')
   })
 
+  it('shows the Returns link to an admin only', () => {
+    mockAuth = createMockAuth({ isAuthenticated: true, user: loggedInUser })
+    mockCurrentUser.data = { userId: 'u-1', roles: ['admin'], borrower: null }
+    const { unmount } = renderLayout()
+
+    expect(screen.getByRole('link', { name: 'Returns' })).toHaveAttribute('href', '/admin/returns')
+    unmount()
+
+    mockCurrentUser.data = { userId: 'u-2', roles: ['user'], borrower: { id: 'b-1', borrowedCount: 0, maxItems: 3, remainingSlots: 3 } }
+    renderLayout()
+    expect(screen.queryByRole('link', { name: 'Returns' })).not.toBeInTheDocument()
+  })
+
   it('hides the Add book link from a user without the admin role', () => {
     mockAuth = createMockAuth({ isAuthenticated: true, user: loggedInUser })
     mockCurrentUser.data = { userId: 'u-1', roles: ['user'], borrower: { id: 'b-1', borrowedCount: 0, maxItems: 3, remainingSlots: 3 } }

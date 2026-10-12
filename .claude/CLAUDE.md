@@ -25,12 +25,12 @@ All backend code lives in `backend/` (pom.xml, mvnw, src, config/, lombok.config
 Base package: `com.ascendion.roshan.simple_library`
 ```
 config/      AppConfig (ModelMapper), OpenApiConfig (Swagger OAuth2), SecurityConfig
-controller/  BookController, BorrowerController, BookBorrowerController
-dto/         BookCreateRequest, BorrowerCreateRequest, BorrowBookRequest (Bean Validation)
+controller/  BookController, BorrowerController, BorrowedBookController
+dto/         BookCreateRequest, BorrowerCreateRequest (Bean Validation), BorrowedBookResponse
 entity/      Book, Borrower (UUID String ids, JPA auditing dates)
 exception/   NotFoundException, CustomResponseEntityExceptionHandler
 repository/  BookRepository, BorrowerRepository (JpaRepository<_, String>)
-service/     BookService, BorrowerService, BookBorrowerService, RegistrationService, KeycloakAdminClient (service account `library-backend`; secret `KEYCLOAK_ADMIN_CLIENT_SECRET`, see docs/setup/keycloak-registration.md)
+service/     BookService, BorrowerService, BorrowedBookService, RegistrationService, KeycloakAdminClient (service account `library-backend`; secret `KEYCLOAK_ADMIN_CLIENT_SECRET`, see docs/setup/keycloak-registration.md)
 ```
 Other: `backend/Dockerfile`, `docker-compose.yaml` (app only), `keycloak/docker-compose.yml`
 (Keycloak + Postgres), `k8s/`, `Jenkinsfile`, `archive/` (old files — ignore).
@@ -43,8 +43,9 @@ Other: `backend/Dockerfile`, `docker-compose.yaml` (app only), `keycloak/docker-
 | POST | `/apis/v1/registrations` | 201, **public** self-registration: creates the Keycloak user (Admin API) + Borrower; 409 `EMAIL_ALREADY_REGISTERED` |
 | POST | `/apis/v1/borrowers` | 200, registers a borrower |
 | GET | `/apis/v1/me` | 200, role `user` or `admin` (a token with neither gets 403): the same profile for everybody `{userId, firstname, lastname, email, roles, mobile, borrower}`. `roles` lists `user` / `admin` as far as the caller has them (the web app shows or hides admin features with it); `mobile` is the Borrower's, null without one. `borrower` (`BorrowerProfile`) is `{id, borrowedCount, maxItems, remainingSlots}` for a caller with role `user` (created on the first call, US-02.4) and `null` otherwise. The web app calls it after login |
-| POST | `/apis/v1/borrowers/{borrower-id}/books` | 200 (empty body), borrow (`{"bookId": "<uuid>"}`). 409 body `BOOK_NOT_AVAILABLE` or `BORROW_LIMIT_REACHED` (max 3 items, `app.library.max-items-per-borrower`) |
-| DELETE | `/apis/v1/borrowers/{borrower-id}/books/{book-id}` | 200, return |
+| POST | `/apis/v1/borrowed-books/{book-id}/borrowers/{borrower-id}` | 200 (empty body, no request body), borrow. 409 body `BOOK_NOT_AVAILABLE` or `BORROW_LIMIT_REACHED` (max 3 items, `app.library.max-items-per-borrower`) |
+| GET | `/apis/v1/borrowed-books?q=` | 200, `Page<BorrowedBookResponse>` of books that are out with the borrower's name and email (`q` matches book id, ISBN, title, borrower email; default 5 per page, newest first). Role `admin` only. Feeds the Returns page |
+| DELETE | `/apis/v1/borrowed-books/{book-id}/borrowers/{borrower-id}` | 200, return (role `admin`; the Returns page at `/admin/returns` uses it) |
 
 Business rules:
 - Several copies of a book may share an ISBN, but title **and** author must match the existing one → otherwise 409.
@@ -61,8 +62,8 @@ The body for 404/409/500 is the plain message string.
 - Stateless OAuth2 resource server; JWTs issued by Keycloak realm **`library`**.
 - Open without a token: `/swagger-ui.html`, `/swagger-ui/**`, `/v3/api-docs/**`, `/h2-console/**`, all `OPTIONS`, `POST /apis/v1/registrations`.
 - Roles come from `realm_access.roles` (`user` → `ROLE_USER`, `admin` → `ROLE_ADMIN`, converter in `SecurityConfig`).
-  Role rules exist **only** for `GET /apis/v1/me` and `POST .../borrowers/{id}/books` (`user` or `admin`) and
-  `POST /apis/v1/books`, `DELETE .../borrowers/{id}/books/{book-id}` (`admin`); a token without the role → 403. Tests use
+  Role rules exist **only** for `GET /apis/v1/borrowed-books` (`admin`), `GET /apis/v1/me` and `POST .../borrowed-books/{book-id}/borrowers/{id}` (`user` or `admin`) and
+  `POST /apis/v1/books`, `DELETE .../borrowed-books/{book-id}/borrowers/{id}` (`admin`); a token without the role → 403. Tests use
   `jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))`. All other endpoints (`GET /books`, `POST /borrowers`) still just need a valid token (E01 adds the rest).
 - Caller context: `CurrentUserInterceptor` (all `/apis/**`) puts the token details (`CurrentUser`: `Jwt`, authorities, `isUser()`/`isAdmin()`) into a `ThreadLocal`
   (`CurrentUserHolder.get()`/`require()`) and clears it after the request. Empty when the request has no token. Use it instead of reading the security context in controllers.
@@ -97,7 +98,7 @@ Docker in WSL (compose project `keycloak`, network `keycloak_default`).
 
 ## Testing conventions
 - Tests mirror the main package under `backend/src/test/java`, named `<ClassName>Test`.
-- Service tests: `@ExtendWith(MockitoExtension.class)`, `@Mock` repositories / `ModelMapper`, `@InjectMocks` (see `BookBorrowerServiceTest`).
+- Service tests: `@ExtendWith(MockitoExtension.class)`, `@Mock` repositories / `ModelMapper`, `@InjectMocks` (see `BorrowedBookServiceTest`).
 - Controller tests: prefer `@WebMvcTest(XController.class)` + `MockMvc` + `@MockitoBean` services
   (Boot 3.5: use `@MockitoBean`, not the deprecated `@MockBean`).
   - `@EnableJpaAuditing` sits on `SimpleLibraryApplication`, so `@WebMvcTest` fails with
@@ -108,7 +109,7 @@ Docker in WSL (compose project `keycloak`, network `keycloak_default`).
 - Repository tests: `@DataJpaTest` (uses H2).
 - Full-context tests: `@SpringBootTest` + `@ActiveProfiles("h2")` only for integration tests
   (existing `BookControllerTest` and `SimpleLibraryApplicationTest` are this style).
-- `BorrowBookRequest` has `@Builder`; `BookCreateRequest` / `BorrowerCreateRequest` have only getters —
+- `BookCreateRequest` / `BorrowerCreateRequest` have only getters —
   build them via JSON in MockMvc tests, or `ReflectionTestUtils.setField` in unit tests.
 - Assertions: AssertJ preferred for new tests; test names `method_condition_expectedResult`.
 

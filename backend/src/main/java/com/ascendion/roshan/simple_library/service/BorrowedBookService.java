@@ -1,19 +1,22 @@
 package com.ascendion.roshan.simple_library.service;
 
 import com.ascendion.roshan.simple_library.config.LibraryProperties;
-import com.ascendion.roshan.simple_library.dto.BorrowBookRequest;
+import com.ascendion.roshan.simple_library.dto.BorrowedBookResponse;
 import com.ascendion.roshan.simple_library.entity.Book;
 import com.ascendion.roshan.simple_library.entity.Borrower;
 import com.ascendion.roshan.simple_library.exception.NotFoundException;
 import com.ascendion.roshan.simple_library.repository.BookRepository;
 import com.ascendion.roshan.simple_library.repository.BorrowerRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 @Service
-public class BookBorrowerService {
+public class BorrowedBookService {
     /** 409 body: the book is borrowed already. */
     public static final String BOOK_NOT_AVAILABLE = "BOOK_NOT_AVAILABLE";
     /** 409 body: the borrower already holds the maximum number of items. */
@@ -23,7 +26,7 @@ public class BookBorrowerService {
     private final BorrowerRepository borrowerRepository;
     private final LibraryProperties libraryProperties;
 
-    public BookBorrowerService(final BookRepository bookRepository,
+    public BorrowedBookService(final BookRepository bookRepository,
                                final BorrowerRepository borrowerRepository,
                                final LibraryProperties libraryProperties) {
         this.bookRepository = bookRepository;
@@ -47,12 +50,12 @@ public class BookBorrowerService {
      */
     @Transactional
     public void borrowBook(final String borrowerId,
-                           final BorrowBookRequest borrowBookRequest) {
+                           final String bookId) {
 
         final Borrower borrower = borrowerRepository.findByIdForUpdate(borrowerId)
                 .orElseThrow(() -> new NotFoundException("Borrower not found"));
 
-        final Book book = bookRepository.findByIdForUpdate(borrowBookRequest.getBookId())
+        final Book book = bookRepository.findByIdForUpdate(bookId)
                 .orElseThrow(() -> new NotFoundException("Book not found"));
 
         if (book.isBorrowed()) {
@@ -67,6 +70,22 @@ public class BookBorrowerService {
         book.setBorrowedDate(LocalDateTime.now());
 
         bookRepository.save(book);
+    }
+
+    /**
+     * Borrowed books for the library desk, optionally narrowed by a search text that is matched
+     * (case-insensitive, anywhere in the text) against the book id, ISBN, title and the borrower's email.
+     */
+    @Transactional(readOnly = true)
+    public Page<BorrowedBookResponse> listBorrowedBooks(final String query, final Pageable pageable) {
+        final String text = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+        return bookRepository.findBorrowedBooks(toLikePattern(text), pageable);
+    }
+
+    /** Wraps the text in % and escapes the LIKE wildcards in it (escape character !), so "50%" is searched as text. */
+    private static String toLikePattern(final String text) {
+        final String escaped = text.replace("!", "!!").replace("%", "!%").replace("_", "!_");
+        return "%" + escaped + "%";
     }
 
     @Transactional

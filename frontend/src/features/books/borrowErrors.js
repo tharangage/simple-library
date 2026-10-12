@@ -1,6 +1,6 @@
 /**
  * Turns a failed borrow call into a sentence for the user.
- * The backend answers 409 with a plain code as the body (see BookBorrowerService); anything unknown
+ * The backend answers 409 with a plain code as the body (see BorrowedBookService); anything unknown
  * falls back to the status or the error text, never a raw stack or JSON.
  * @param {{ status?: number, message?: string }} error
  * @param {number} maxItems  the limit, for the "reached the limit" message

@@ -26,7 +26,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .addPathPatterns("/apis/**")
                 .order(0);
         registry.addInterceptor(new BorrowerProvisioningInterceptor(provisioningService))
-                .addPathPatterns("/apis/v1/borrowers/*/books")
+                .addPathPatterns("/apis/v1/borrowed-books/*/borrowers/*")
                 .order(1);
     }
 }

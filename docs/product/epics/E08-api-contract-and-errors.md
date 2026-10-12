@@ -33,4 +33,4 @@ As an API consumer, I want every error in the same JSON format, so that I can ha
 ### US-08.4 Settle API shape before the UI (BE · S) · [SCRUM-52](https://tharangage.atlassian.net/browse/SCRUM-52)
 - `GET /apis/v1/books` uses Spring Data `PagedModel` (`@EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO)`): `{content, page:{size, number, totalElements, totalPages}}`.
 - Create endpoints return **201 + `Location`** (borrower registration currently returns 200).
-- New user-facing paths go under `/apis/v1/me/**` and admin paths under `/apis/v1/loans/**` (see E01/E04/E06). Old paths are deprecated in OpenAPI.
+- New user-facing paths go under `/apis/v1/me/**` and admin paths under `/apis/v1/borrowed-books/**` (see E01/E04/E06). Old paths are deprecated in OpenAPI.

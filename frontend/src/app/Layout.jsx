@@ -23,6 +23,7 @@ export function Layout() {
             <NavLink to="/books" end>
               Books
             </NavLink>
+            {isAdmin && <NavLink to="/admin/returns">Returns</NavLink>}
             {isAdmin && <NavLink to="/books/new">Add book</NavLink>}
           </nav>
         )}

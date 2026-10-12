@@ -1,6 +1,5 @@
 package com.ascendion.roshan.simple_library.service;
 
-import com.ascendion.roshan.simple_library.dto.BorrowBookRequest;
 import com.ascendion.roshan.simple_library.entity.Book;
 import com.ascendion.roshan.simple_library.entity.Borrower;
 import com.ascendion.roshan.simple_library.repository.BookRepository;
@@ -32,7 +31,7 @@ class BorrowLimitConcurrencyTest {
     private static final int PARALLEL_REQUESTS = 8;
 
     @Autowired
-    private BookBorrowerService bookBorrowerService;
+    private BorrowedBookService borrowedBookService;
 
     @Autowired
     private BookRepository bookRepository;
@@ -68,7 +67,7 @@ class BorrowLimitConcurrencyTest {
             final Callable<String> task = () -> {
                 start.await();
                 try {
-                    bookBorrowerService.borrowBook(borrowerId, BorrowBookRequest.builder().bookId(bookId).build());
+                    borrowedBookService.borrowBook(borrowerId, bookId);
                     return "OK";
                 } catch (IllegalStateException e) {
                     return e.getMessage();

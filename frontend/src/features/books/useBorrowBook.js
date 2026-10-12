@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from 'react-oidc-context'
-import { borrowBook } from '../../api/borrowers.js'
+import { borrowBook } from '../../api/borrowedBooks.js'
 import { useToast } from '../../components/useToast.js'
 import { borrowErrorMessage } from './borrowErrors.js'
 

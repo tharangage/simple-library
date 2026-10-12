@@ -2,7 +2,7 @@ package com.ascendion.roshan.simple_library.controller;
 
 import com.ascendion.roshan.simple_library.config.SecurityConfig;
 import com.ascendion.roshan.simple_library.entity.Borrower;
-import com.ascendion.roshan.simple_library.service.BookBorrowerService;
+import com.ascendion.roshan.simple_library.service.BorrowedBookService;
 import com.ascendion.roshan.simple_library.service.BorrowerProvisioningService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +39,7 @@ class MeControllerTest {
     private BorrowerProvisioningService provisioningService;
 
     @MockitoBean
-    private BookBorrowerService bookBorrowerService;
+    private BorrowedBookService borrowedBookService;
 
     @MockitoBean
     private JpaMetamodelMappingContext jpaMetamodelMappingContext;
@@ -72,8 +72,8 @@ class MeControllerTest {
     @Test
     void me_user_returnsTokenProfileWithBorrowerSection() throws Exception {
         when(provisioningService.getOrCreate(any(Jwt.class))).thenReturn(borrower());
-        when(bookBorrowerService.borrowedCount("b-1")).thenReturn(2L);
-        when(bookBorrowerService.maxItemsPerBorrower()).thenReturn(3);
+        when(borrowedBookService.borrowedCount("b-1")).thenReturn(2L);
+        when(borrowedBookService.maxItemsPerBorrower()).thenReturn(3);
 
         mockMvc.perform(get("/apis/v1/me").with(jwt().authorities(USER)
                         .jwt(j -> j.subject("kc-1").claim("given_name", "Ann").claim("family_name", "Lee")

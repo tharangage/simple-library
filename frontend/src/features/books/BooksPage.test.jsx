@@ -5,7 +5,7 @@ import { MemoryRouter, useLocation } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/client.js'
 import { fetchBooks } from '../../api/books.js'
-import { borrowBook } from '../../api/borrowers.js'
+import { borrowBook } from '../../api/borrowedBooks.js'
 import { fetchMe } from '../../api/me.js'
 import { ToastProvider } from '../../components/Toast.jsx'
 import { BooksPage } from './BooksPage.jsx'
@@ -16,7 +16,7 @@ vi.mock('react-oidc-context', () => ({
   useAuth: () => ({ user: { access_token: 'test-token' }, signinRedirect }),
 }))
 vi.mock('../../api/books.js', () => ({ fetchBooks: vi.fn() }))
-vi.mock('../../api/borrowers.js', () => ({ borrowBook: vi.fn() }))
+vi.mock('../../api/borrowedBooks.js', () => ({ borrowBook: vi.fn() }))
 vi.mock('../../api/me.js', () => ({ fetchMe: vi.fn() }))
 
 const page = (items, overrides = {}) => ({

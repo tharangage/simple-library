@@ -21,6 +21,11 @@ export function apiPost(path, body, { token } = {}) {
   return request('POST', path, { token, body })
 }
 
+/** DELETE a resource. The backend answers 200 with no body, which comes back as null. */
+export function apiDelete(path, { token } = {}) {
+  return request('DELETE', path, { token })
+}
+
 /**
  * The single place where the app talks to the backend.
  * Adds the base URL and the bearer token, and turns non-2xx responses into ApiError.
