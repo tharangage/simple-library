@@ -28,8 +28,15 @@ public class BookService {
         return bookRepository.save(bookNew);
     }
 
-    public Page<Book> listBooks(final Pageable pageable) {
-        return bookRepository.findAll(pageable);
+    /**
+     * One page of books. A search text narrows the list to books whose title, author or ISBN contain it
+     * (case-insensitive); without one, every book is listed.
+     */
+    public Page<Book> listBooks(final String query, final Pageable pageable) {
+        if (SearchPattern.normalize(query).isEmpty()) {
+            return bookRepository.findAll(pageable);
+        }
+        return bookRepository.searchBooks(SearchPattern.contains(query), pageable);
     }
 
     /**

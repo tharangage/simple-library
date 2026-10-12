@@ -1,11 +1,11 @@
 import { apiGet, apiPost } from './client.js'
 
 /**
- * GET /apis/v1/books – one page of books.
- * @param {{ token: string, page: number, size: number, sort?: string }} args  page is 0-based (Spring Data)
+ * GET /apis/v1/books – one page of books. `q` narrows it to books whose title, author or ISBN contain the text.
+ * @param {{ token: string, page: number, size: number, sort?: string, q?: string }} args  page is 0-based (Spring Data)
  */
-export async function fetchBooks({ token, page, size, sort }) {
-  const body = await apiGet('/apis/v1/books', { token, params: { page, size, sort } })
+export async function fetchBooks({ token, page, size, sort, q }) {
+  const body = await apiGet('/apis/v1/books', { token, params: { page, size, sort, q } })
   return normalizePage(body)
 }
 

@@ -78,7 +78,7 @@ describe('BooksPage', () => {
     renderPage()
 
     await screen.findByText(/No books yet/)
-    expect(fetchBooks).toHaveBeenCalledWith({ token: 'test-token', page: 0, size: 5, sort: 'title,asc' })
+    expect(fetchBooks).toHaveBeenCalledWith({ token: 'test-token', page: 0, size: 5, sort: 'title,asc', q: '' })
   })
 
   it('shows a loading message first', () => {
@@ -115,6 +115,66 @@ describe('BooksPage', () => {
     await user.click(screen.getByRole('button', { name: /Author/ }))
     expect(fetchBooks).toHaveBeenLastCalledWith(expect.objectContaining({ sort: 'author,desc' }))
     expect(screen.getByRole('columnheader', { name: /Author/ })).toHaveAttribute('aria-sort', 'descending')
+  })
+
+  it('searches on submit, starts from page 1, keeps the sort order and puts the text in the URL', async () => {
+    vi.mocked(fetchBooks).mockResolvedValue(page([book('1', 'Dune')]))
+    const user = userEvent.setup()
+    renderPage('/books?page=3&sort=author,desc')
+
+    await user.type(await screen.findByLabelText('Search by title, author or ISBN'), '  dune  {Enter}')
+
+    expect(fetchBooks).toHaveBeenLastCalledWith(
+      expect.objectContaining({ page: 0, sort: 'author,desc', q: 'dune' }),
+    )
+    expect(screen.getByTestId('url')).toHaveTextContent('/books?sort=author%2Cdesc&q=dune')
+  })
+
+  it('reads the search text from the URL and shows it in the box', async () => {
+    vi.mocked(fetchBooks).mockResolvedValue(page([book('1', 'Dune')]))
+
+    renderPage('/books?q=dune')
+
+    expect(await screen.findByLabelText('Search by title, author or ISBN')).toHaveValue('dune')
+    expect(fetchBooks).toHaveBeenCalledWith(expect.objectContaining({ q: 'dune' }))
+  })
+
+  it('keeps the search text when sorting and when changing page', async () => {
+    vi.mocked(fetchBooks).mockImplementation(async ({ page: p }) =>
+      page([book(String(p), `Book on page ${p}`)], { page: p, totalElements: 6, totalPages: 2 }),
+    )
+    const user = userEvent.setup()
+    renderPage('/books?q=dune')
+
+    await user.click(await screen.findByRole('button', { name: /next/i }))
+    expect(screen.getByTestId('url')).toHaveTextContent('/books?q=dune&page=2')
+
+    await user.click(screen.getByRole('button', { name: 'Author' }))
+    expect(screen.getByTestId('url')).toHaveTextContent('/books?q=dune&sort=author%2Casc')
+  })
+
+  it('tells the user when no book matches, and Clear brings the full list back', async () => {
+    vi.mocked(fetchBooks).mockImplementation(async ({ q }) => (q ? page([]) : page([book('1', 'Dune')])))
+    const user = userEvent.setup()
+    renderPage('/books?q=zzz&page=2')
+
+    expect(await screen.findByText('No books match “zzz”.')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Clear' }))
+
+    expect(await screen.findByText('Dune')).toBeInTheDocument()
+    expect(screen.getByTestId('url')).toHaveTextContent(/^\/books$/)
+    expect(screen.queryByRole('button', { name: 'Clear' })).not.toBeInTheDocument()
+  })
+
+  it('searching for nothing removes the search text', async () => {
+    vi.mocked(fetchBooks).mockResolvedValue(page([book('1', 'Dune')]))
+    const user = userEvent.setup()
+    renderPage('/books?q=dune')
+
+    await user.clear(await screen.findByLabelText('Search by title, author or ISBN'))
+    await user.type(screen.getByLabelText('Search by title, author or ISBN'), '   {Enter}')
+
+    expect(screen.getByTestId('url')).toHaveTextContent(/^\/books$/)
   })
 
   it('ignores an unknown sort field in the URL', async () => {

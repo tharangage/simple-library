@@ -265,7 +265,7 @@ class BookServiceTest {
             final Page<Book> page = new PageImpl<>(List.of(book(ISBN, TITLE, AUTHOR)), pageable, 3);
             when(bookRepository.findAll(pageable)).thenReturn(page);
 
-            final Page<Book> result = bookService.listBooks(pageable);
+            final Page<Book> result = bookService.listBooks(null, pageable);
 
             assertThat(result).isSameAs(page);
             assertThat(result.getContent()).hasSize(1);
@@ -283,7 +283,7 @@ class BookServiceTest {
             final Page<Book> emptyPage = Page.empty(pageable);
             when(bookRepository.findAll(pageable)).thenReturn(emptyPage);
 
-            final Page<Book> result = bookService.listBooks(pageable);
+            final Page<Book> result = bookService.listBooks(null, pageable);
 
             assertThat(result).isSameAs(emptyPage);
             assertThat(result.getContent()).isEmpty();
@@ -299,11 +299,39 @@ class BookServiceTest {
                     book("978-0132350884", "Clean Code", "Robert C. Martin")));
             when(bookRepository.findAll(unpaged)).thenReturn(page);
 
-            final Page<Book> result = bookService.listBooks(unpaged);
+            final Page<Book> result = bookService.listBooks(null, unpaged);
 
             assertThat(result).isSameAs(page);
             assertThat(result.getContent()).hasSize(2);
             verify(bookRepository).findAll(same(unpaged));
+        }
+
+        @Test
+        @DisplayName("blank search text: lists every book without searching")
+        void listBooks_blankQuery_listsAll() {
+            final Pageable pageable = PageRequest.of(0, 5);
+            final Page<Book> page = new PageImpl<>(List.of(book(ISBN, TITLE, AUTHOR)), pageable, 1);
+            when(bookRepository.findAll(pageable)).thenReturn(page);
+
+            final Page<Book> result = bookService.listBooks("   ", pageable);
+
+            assertThat(result).isSameAs(page);
+            verify(bookRepository).findAll(pageable);
+            verifyNoMoreInteractions(bookRepository);
+        }
+
+        @Test
+        @DisplayName("search text: searches with a trimmed, lower-case pattern with wildcards escaped")
+        void listBooks_query_searchesWithEscapedLowerCasePattern() {
+            final Pageable pageable = PageRequest.of(0, 5);
+            final Page<Book> page = new PageImpl<>(List.of(book(ISBN, TITLE, AUTHOR)), pageable, 1);
+            when(bookRepository.searchBooks("%clean 50!%%", pageable)).thenReturn(page);
+
+            final Page<Book> result = bookService.listBooks("  Clean 50% ", pageable);
+
+            assertThat(result).isSameAs(page);
+            verify(bookRepository).searchBooks("%clean 50!%%", pageable);
+            verifyNoMoreInteractions(bookRepository);
         }
     }
 }

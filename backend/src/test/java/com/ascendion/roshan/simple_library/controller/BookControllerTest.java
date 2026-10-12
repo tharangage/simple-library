@@ -47,6 +47,31 @@ public class BookControllerTest {
     }
 
     @Test
+    void listBooks_withSearchText_returnsOnlyMatchingBooks() throws Exception {
+        for (final String[] book : new String[][] {
+                {"978-1-4028-9462-6", "Searchable Zebra Handbook", "Ann Author"},
+                {"978-1-4028-9463-3", "Unrelated Cooking", "Bob Baker"}}) {
+            mockMvc.perform(post("/apis/v1/books").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"isbn\": \"" + book[0] + "\", \"title\": \"" + book[1]
+                                    + "\", \"author\": \"" + book[2] + "\"}"))
+                    .andExpect(status().isCreated());
+        }
+
+        mockMvc.perform(get("/apis/v1/books").param("q", "  ZEBRA ").with(jwt()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].title").value("Searchable Zebra Handbook"));
+
+        mockMvc.perform(get("/apis/v1/books").param("q", "baker").with(jwt()))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].title").value("Unrelated Cooking"));
+
+        mockMvc.perform(get("/apis/v1/books").param("q", "no-such-book").with(jwt()))
+                .andExpect(jsonPath("$.totalElements").value(0));
+    }
+
+    @Test
     void listBooks_noToken_returns401() throws Exception {
         mockMvc.perform(get("/apis/v1/books"))
                 .andExpect(status().isUnauthorized());

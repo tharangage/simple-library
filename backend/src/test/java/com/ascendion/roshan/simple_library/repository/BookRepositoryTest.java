@@ -59,6 +59,50 @@ class BookRepositoryTest {
         assertThat(bookRepository.countByBorrowedById(ann.getId())).isZero();
     }
 
+    private Book copy(final String isbn, final String title, final String author) {
+        final Book book = new Book();
+        book.setIsbn(isbn);
+        book.setTitle(title);
+        book.setAuthor(author);
+        return bookRepository.saveAndFlush(book);
+    }
+
+    @Test
+    void searchBooks_matchesTitleAuthorAndIsbnCaseInsensitively() {
+        copy("978-0-13-235088-4", "Clean Code", "Robert C. Martin");
+        copy("978-0-13-468599-1", "Effective Java", "Joshua Bloch");
+
+        assertThat(bookRepository.searchBooks("%clean%", FIRST_PAGE).getContent())
+                .extracting(Book::getTitle).containsExactly("Clean Code");
+        assertThat(bookRepository.searchBooks("%bloch%", FIRST_PAGE).getContent())
+                .extracting(Book::getTitle).containsExactly("Effective Java");
+        assertThat(bookRepository.searchBooks("%468599%", FIRST_PAGE).getContent())
+                .extracting(Book::getTitle).containsExactly("Effective Java");
+        assertThat(bookRepository.searchBooks("%nothing%", FIRST_PAGE).getTotalElements()).isZero();
+    }
+
+    @Test
+    void searchBooks_returnsBorrowedAndAvailableCopies_andPages() {
+        final Borrower ann = borrower("ann@example.com");
+        book("Dune", ann);
+        book("Dune Messiah", null);
+        book("Dune Children", null);
+
+        final var page = bookRepository.searchBooks("%dune%", PageRequest.of(1, 2, Sort.by("title")));
+
+        assertThat(page.getTotalElements()).isEqualTo(3);
+        assertThat(page.getContent()).extracting(Book::getTitle).containsExactly("Dune Messiah");
+    }
+
+    @Test
+    void searchBooks_escapedWildcard_isSearchedAsText() {
+        copy("978-0-00-000001-0", "100% Pure", "A");
+        copy("978-0-00-000002-0", "1000 Ways", "B");
+
+        assertThat(bookRepository.searchBooks("%100!%%", FIRST_PAGE).getContent())
+                .extracting(Book::getTitle).containsExactly("100% Pure");
+    }
+
     private static final PageRequest FIRST_PAGE = PageRequest.of(0, 10, Sort.by("title"));
 
     @Test

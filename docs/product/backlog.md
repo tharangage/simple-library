@@ -44,10 +44,10 @@ Testing is part of each story (Definition of Done), not a separate phase.
  ─────────────────  ───────────────  ────────────────  ─────────────────  ───────────────────  ──────────────────
  US-02.3 form       US-07.2 OIDC     US-03.1 list      US-04.2 borrow btn US-05.5 reserve btn  US-06.2 returns page
  US-02.1 API        US-07.4 shell    US-03.2 status    US-04.1 limit 3    US-05.1 API          US-06.1 admin API
- US-02.2 mobile     US-01.2 roles    US-03.3 search*   US-04.3 My books   US-05.2 hand-over    US-06.3 role nav
+ US-02.2 mobile     US-01.2 roles    US-03.3 search*¹  US-04.3 My books   US-05.2 hand-over    US-06.3 role nav
  US-02.4 JIT        US-01.4 "me"     US-03.4 add book  ──                 US-05.3 expiry       ──
                                                                           US-05.4 cancel
- (* = nice-to-have)
+ (* = nice-to-have; ¹ search done, "available only" filter open)
 ```
 
 ## Assumptions (requirement is silent → our choice)
