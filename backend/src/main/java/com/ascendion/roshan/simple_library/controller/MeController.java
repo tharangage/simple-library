@@ -5,7 +5,7 @@ import com.ascendion.roshan.simple_library.dto.UserProfileResponse;
 import com.ascendion.roshan.simple_library.entity.Borrower;
 import com.ascendion.roshan.simple_library.security.CurrentUser;
 import com.ascendion.roshan.simple_library.security.CurrentUserHolder;
-import com.ascendion.roshan.simple_library.service.BookBorrowerService;
+import com.ascendion.roshan.simple_library.service.BorrowedBookService;
 import com.ascendion.roshan.simple_library.service.BorrowerProvisioningService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,12 +21,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class MeController {
 
     private final BorrowerProvisioningService provisioningService;
-    private final BookBorrowerService bookBorrowerService;
+    private final BorrowedBookService borrowedBookService;
 
     public MeController(final BorrowerProvisioningService provisioningService,
-                        final BookBorrowerService bookBorrowerService) {
+                        final BorrowedBookService borrowedBookService) {
         this.provisioningService = provisioningService;
-        this.bookBorrowerService = bookBorrowerService;
+        this.borrowedBookService = borrowedBookService;
     }
 
     @GetMapping
@@ -37,8 +37,8 @@ public class MeController {
         if (caller.isUser()) {
             final Borrower entity = provisioningService.getOrCreate(caller.jwt());
             mobile = entity.getMobile();
-            borrower = BorrowerProfile.of(entity, bookBorrowerService.borrowedCount(entity.getId()),
-                    bookBorrowerService.maxItemsPerBorrower());
+            borrower = BorrowerProfile.of(entity, borrowedBookService.borrowedCount(entity.getId()),
+                    borrowedBookService.maxItemsPerBorrower());
         }
         return UserProfileResponse.of(caller.jwt(), caller.roles(), mobile, borrower);
     }

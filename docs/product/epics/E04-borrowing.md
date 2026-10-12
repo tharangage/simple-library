@@ -35,7 +35,7 @@ As a user, I want to see what I've borrowed and reserved, so that I know what to
 Decisions taken while implementing US-04.1 and US-04.2 (branch `feature/US-04.1-04.2-borrow-from-books-page`). They replace the matching wording in the stories above.
 
 **API (US-04.1)**
-- The existing `POST /apis/v1/borrowers/{borrower-id}/books {bookId}` is kept; there is **no** `POST /apis/v1/me/loans`. It answers 200 with no body (not 201 with the loan).
+- The existing `POST /apis/v1/borrowed-books/{book-id}/borrowers/{borrower-id}` is kept; there is **no** `POST /apis/v1/me/loans`. It answers 200 with no body (not 201 with the loan).
 - Who may call it (SCRUM-62): an `admin` may borrow for any existing borrower (library desk); everybody else only for their own Borrower, otherwise 403. A token with both roles counts as admin for this check.
 - Limit: `app.library.max-items-per-borrower` (default 3). It counts the books a borrower holds; reservations are added with E05.
 - Errors are plain-text bodies until US-08.2: 409 `BOOK_NOT_AVAILABLE` (book already borrowed), 409 `BORROW_LIMIT_REACHED`, 404 `Borrower not found` / `Book not found`. The book check comes before the limit check.

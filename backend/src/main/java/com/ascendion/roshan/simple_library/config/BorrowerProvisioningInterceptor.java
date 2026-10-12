@@ -4,6 +4,7 @@ import com.ascendion.roshan.simple_library.security.CurrentUserHolder;
 import com.ascendion.roshan.simple_library.service.BorrowerProvisioningService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
@@ -21,6 +22,10 @@ public class BorrowerProvisioningInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(final HttpServletRequest request, final HttpServletResponse response, final Object handler) {
+        // Borrow (POST) and return (DELETE) share one path; only borrow provisions.
+        if (!HttpMethod.POST.matches(request.getMethod())) {
+            return true;
+        }
         CurrentUserHolder.get()
                 .filter(user -> user.isUser())
                 .ifPresent(user -> provisioningService.getOrCreate(user.jwt()));

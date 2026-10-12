@@ -1,10 +1,13 @@
 package com.ascendion.roshan.simple_library.repository;
 
+import com.ascendion.roshan.simple_library.dto.BorrowedBookResponse;
 import com.ascendion.roshan.simple_library.entity.Book;
 import com.ascendion.roshan.simple_library.entity.Borrower;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -54,5 +57,60 @@ class BookRepositoryTest {
         final Borrower ann = borrower("ann@example.com");
 
         assertThat(bookRepository.countByBorrowedById(ann.getId())).isZero();
+    }
+
+    private static final PageRequest FIRST_PAGE = PageRequest.of(0, 10, Sort.by("title"));
+
+    @Test
+    void findBorrowedBooks_returnsOnlyBorrowedBooksWithBorrowerDetails() {
+        final Borrower ann = borrower("ann@example.com");
+        book("Borrowed", ann);
+        book("On the shelf", null);
+
+        final var page = bookRepository.findBorrowedBooks("%", FIRST_PAGE);
+
+        assertThat(page.getTotalElements()).isEqualTo(1);
+        final BorrowedBookResponse borrowedBook = page.getContent().get(0);
+        assertThat(borrowedBook.title()).isEqualTo("Borrowed");
+        assertThat(borrowedBook.borrowerId()).isEqualTo(ann.getId());
+        assertThat(borrowedBook.borrowerFirstname()).isEqualTo("Ann");
+        assertThat(borrowedBook.borrowerEmail()).isEqualTo("ann@example.com");
+    }
+
+    @Test
+    void findBorrowedBooks_matchesTitleAndBorrowerEmailCaseInsensitively() {
+        final Borrower ann = borrower("ann@example.com");
+        final Borrower bob = borrower("bob@example.com");
+        book("Clean Code", ann);
+        book("Effective Java", bob);
+
+        assertThat(bookRepository.findBorrowedBooks("%clean%", FIRST_PAGE).getContent())
+                .extracting(BorrowedBookResponse::title).containsExactly("Clean Code");
+        assertThat(bookRepository.findBorrowedBooks("%bob@example%", FIRST_PAGE).getContent())
+                .extracting(BorrowedBookResponse::title).containsExactly("Effective Java");
+    }
+
+    @Test
+    void findBorrowedBooks_matchesBookIdAndIsbn() {
+        final Borrower ann = borrower("ann@example.com");
+        book("Clean Code", ann);
+        final String bookId = bookRepository.findAll().get(0).getId();
+
+        assertThat(bookRepository.findBorrowedBooks("%" + bookId + "%", FIRST_PAGE).getTotalElements()).isEqualTo(1);
+        assertThat(bookRepository.findBorrowedBooks("%978-0-00%", FIRST_PAGE).getTotalElements()).isEqualTo(1);
+        assertThat(bookRepository.findBorrowedBooks("%nothing%", FIRST_PAGE).getTotalElements()).isZero();
+    }
+
+    @Test
+    void findBorrowedBooks_pagesTheResult() {
+        final Borrower ann = borrower("ann@example.com");
+        book("A", ann);
+        book("B", ann);
+        book("C", ann);
+
+        final var page = bookRepository.findBorrowedBooks("%", PageRequest.of(1, 2, Sort.by("title")));
+
+        assertThat(page.getTotalElements()).isEqualTo(3);
+        assertThat(page.getContent()).extracting(BorrowedBookResponse::title).containsExactly("C");
     }
 }

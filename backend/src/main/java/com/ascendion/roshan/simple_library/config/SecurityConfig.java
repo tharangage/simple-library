@@ -50,8 +50,11 @@ public class SecurityConfig {
                         // Registering a book is a library-desk action. Listing books needs only a valid token.
                         .requestMatchers(HttpMethod.POST, "/apis/v1/books").hasRole("ADMIN")
                         // Returning a book is a library-desk action: users cannot return books themselves.
-                        .requestMatchers(HttpMethod.DELETE, "/apis/v1/borrowers/*/books/*").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/apis/v1/borrowers/*/books").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/apis/v1/borrowed-books/*/borrowers/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/apis/v1/borrowed-books/*/borrowers/*").hasAnyRole("USER", "ADMIN")
+                        // Borrowed books show borrower names and emails, so only the library desk may list them.
+                        // Listed after the borrow rule above on purpose: the first matching rule wins.
+                        .requestMatchers("/apis/v1/borrowed-books", "/apis/v1/borrowed-books/**").hasRole("ADMIN")
                         .requestMatchers("/apis/v1/me", "/apis/v1/me/**").hasAnyRole("USER", "ADMIN")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));

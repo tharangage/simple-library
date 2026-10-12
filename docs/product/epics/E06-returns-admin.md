@@ -8,9 +8,9 @@
 
 ### US-06.1 Admin return API (BE · M) · [SCRUM-38](https://tharangage.atlassian.net/browse/SCRUM-38)
 As an admin, I want to mark a borrowed book as returned, so that it becomes available, or passes to the next reservation.
-- `DELETE /apis/v1/loans/{bookId}` (role `admin`) → 204. Book not borrowed → 409 `BOOK_NOT_BORROWED`. Unknown book → 404.
+- `DELETE /apis/v1/borrowed-books/{bookId}` (role `admin`) → 204. Book not borrowed → 409 `BOOK_NOT_BORROWED`. Unknown book → 404.
 - Clears `borrowedBy` / `borrowedDate` and triggers the hand-over (US-05.2) in the same transaction.
-- `GET /apis/v1/loans?q=…` (role `admin`): current loans with book title/ISBN/id, borrower name and email, and borrowed date. Paged. This is the only place borrower identities are shown, and only to admins.
+- `GET /apis/v1/borrowed-books?q=…` (role `admin`): current loans with book title/ISBN/id, borrower name and email, and borrowed date. Paged. This is the only place borrower identities are shown, and only to admins.
 - Users calling either endpoint → 403. Tests updated for the changed business rule.
 
 ### US-06.2 Returns page (FE · M) · [SCRUM-39](https://tharangage.atlassian.net/browse/SCRUM-39)

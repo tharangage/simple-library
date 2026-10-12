@@ -50,12 +50,12 @@ flowchart TB
     subgraph controller
         BookController
         BorrowerController
-        BookBorrowerController
+        BorrowedBookController
     end
     subgraph service
         BookService
         BorrowerService
-        BookBorrowerService
+        BorrowedBookService
     end
     subgraph repository
         BookRepository
@@ -70,11 +70,11 @@ flowchart TB
 
     BookController --> BookService
     BorrowerController --> BorrowerService
-    BookBorrowerController --> BookBorrowerService
+    BorrowedBookController --> BorrowedBookService
     BookService --> BookRepository
     BorrowerService --> BorrowerRepository
-    BookBorrowerService --> BookRepository
-    BookBorrowerService --> BorrowerRepository
+    BorrowedBookService --> BookRepository
+    BorrowedBookService --> BorrowerRepository
     BookRepository --> Book
     BorrowerRepository --> Borrower
     controller -. uses .-> dto
@@ -111,18 +111,18 @@ sequenceDiagram
 
 ## 4. Borrow a book (sequence)
 
-`POST /apis/v1/borrowers/{borrower-id}/books`
+`POST /apis/v1/borrowed-books/{book-id}/borrowers/{borrower-id}`
 
 ```mermaid
 sequenceDiagram
     participant C as Client
-    participant BC as BookBorrowerController
-    participant S as BookBorrowerService (@Transactional)
+    participant BC as BorrowedBookController
+    participant S as BorrowedBookService (@Transactional)
     participant BR as BorrowerRepository
     participant KR as BookRepository
     participant DB as Database
 
-    C->>BC: POST {bookId} + JWT
+    C->>BC: POST (ids in the path) + JWT
     BC->>S: borrowBook(borrowerId, request)
     S->>BR: findById(borrowerId)
     BR-->>S: Borrower (or NotFoundException, 404)

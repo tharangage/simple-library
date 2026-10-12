@@ -33,7 +33,7 @@ As the library, I want each endpoint restricted to the right role, so that users
 | `GET /apis/v1/books` | `user`, `admin` |
 | `POST /apis/v1/books` | `admin` (done with US-03.4) |
 | `GET/POST/DELETE /apis/v1/me/**` (loans, reservations) | `user` |
-| `DELETE /apis/v1/loans/{bookId}` (return), `GET /apis/v1/loans` | `admin` |
+| `DELETE /apis/v1/borrowed-books/{bookId}` (return), `GET /apis/v1/borrowed-books` | `admin` |
 | Swagger, `/v3/api-docs/**`, `OPTIONS` | public |
 
 - No token → 401; valid token with the wrong role → 403 (uses the common error body, US-08.1).
@@ -45,7 +45,7 @@ As a user, I want the API to act only on my own borrower record, so that nobody 
 - `Borrower` gets `keycloakUserId` (unique, not null for new rows), set from the token `sub`.
 - `GET /apis/v1/me` returns my profile: name, email, mobile, active loan count, reservation count, remaining slots.
 - Borrow/reserve endpoints resolve the borrower from the token. They take no borrower id in the path.
-- The old `/apis/v1/borrowers/{id}/books` endpoints are removed or made admin-only (with a changelog note).
+- The old `/apis/v1/borrowers/{id}/books` endpoints (now `/apis/v1/borrowed-books/{book-id}/borrowers/{id}`) are removed or made admin-only (with a changelog note).
 
 ### US-01.5 Validate token audience (BE · S) · [SCRUM-19](https://tharangage.atlassian.net/browse/SCRUM-19)
 As the backend, I want to reject tokens that weren't issued for this API, so that a token for another client in the realm can't be reused.
@@ -59,7 +59,7 @@ As an API user, I want to log in from Swagger UI's *Authorize* button with my li
 
 ### US-01.7 Borrow on behalf of another borrower: admin only (BE · S) · [SCRUM-62](https://tharangage.atlassian.net/browse/SCRUM-62) – *implemented together with US-04.1*
 As the library, I want only admins to borrow on behalf of another borrower, so that a user cannot create loans under someone else's name.
-- Origin: accepted gap of US-02.4 ([ADR-001](../../decisions/ADR-001-borrower-provisioning.md)). Today `POST /apis/v1/borrowers/{borrower-id}/books` does not compare `{borrower-id}` with the caller, so any `user` can borrow for any existing borrower id.
+- Origin: accepted gap of US-02.4 ([ADR-001](../../decisions/ADR-001-borrower-provisioning.md)). Today `POST /apis/v1/borrowed-books/{book-id}/borrowers/{borrower-id}` does not compare `{borrower-id}` with the caller, so any `user` can borrow for any existing borrower id.
 - A `user` (not admin) may borrow only for their own Borrower; another id → 403. An `admin` may borrow for any existing borrower (library desk); unknown id → 404.
 - Decide the rule for a token with both `user` and `admin` (admins also get `user` from the realm default role): they must still be able to borrow for others at the desk.
 - `@WebMvcTest` tests: user-own, user-other, admin-other, admin+user-other. ADR-001 and `.claude/CLAUDE.md` (borrow rule) are updated.

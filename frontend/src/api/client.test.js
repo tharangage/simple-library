@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, apiGet, apiPost } from './client.js'
+import { ApiError, apiDelete, apiGet, apiPost } from './client.js'
 
 const jsonResponse = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
@@ -17,6 +17,22 @@ describe('empty response bodies', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 204 })))
 
     await expect(apiPost('/x', {})).resolves.toBeNull()
+  })
+})
+
+describe('apiDelete', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('sends DELETE with the bearer token and no body, and returns null for an empty answer', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(apiDelete('/x/1', { token: 't0k' })).resolves.toBeNull()
+
+    const [, options] = fetchMock.mock.calls[0]
+    expect(options.method).toBe('DELETE')
+    expect(options.headers.Authorization).toBe('Bearer t0k')
+    expect(options.body).toBeUndefined()
   })
 })
 

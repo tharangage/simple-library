@@ -5,6 +5,7 @@ import { SigninCallbackPage } from '../auth/SigninCallbackPage.jsx'
 import { AddBookPage } from '../features/books/AddBookPage.jsx'
 import { BooksPage } from '../features/books/BooksPage.jsx'
 import { RegisterPage } from '../features/registration/RegisterPage.jsx'
+import { ReturnsPage } from '../features/returns/ReturnsPage.jsx'
 import { HomePage } from './HomePage.jsx'
 import { Layout } from './Layout.jsx'
 import { NotFoundPage } from './NotFoundPage.jsx'
@@ -31,6 +32,16 @@ export const router = createBrowserRouter([
           <RequireAuth>
             <RequireAdmin>
               <AddBookPage />
+            </RequireAdmin>
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'admin/returns',
+        element: (
+          <RequireAuth>
+            <RequireAdmin>
+              <ReturnsPage />
             </RequireAdmin>
           </RequireAuth>
         ),

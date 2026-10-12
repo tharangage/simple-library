@@ -213,3 +213,8 @@ button[aria-disabled='true'] { opacity: 0.5; cursor: not-allowed; }
 .topbar nav { display: flex; gap: 1rem; }
 .status-line:empty { display: none; }
 .status-line .message { margin: 0; }
+
+.search-form { margin-bottom: 1.25rem; }
+.search-form label { display: block; font-size: 0.875rem; color: var(--muted); margin-bottom: 0.25rem; }
+.search-form__row { display: flex; gap: 0.5rem; }
+.search-form__row input { flex: 1; min-width: 0; }
