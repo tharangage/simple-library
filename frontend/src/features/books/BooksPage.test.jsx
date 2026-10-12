@@ -78,7 +78,7 @@ describe('BooksPage', () => {
     renderPage()
 
     await screen.findByText(/No books yet/)
-    expect(fetchBooks).toHaveBeenCalledWith({ token: 'test-token', page: 0, size: 20, sort: 'title,asc' })
+    expect(fetchBooks).toHaveBeenCalledWith({ token: 'test-token', page: 0, size: 5, sort: 'title,asc' })
   })
 
   it('shows a loading message first', () => {
