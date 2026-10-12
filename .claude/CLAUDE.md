@@ -32,8 +32,8 @@ exception/   NotFoundException, CustomResponseEntityExceptionHandler
 repository/  BookRepository, BorrowerRepository (JpaRepository<_, String>)
 service/     BookService, BorrowedBookService, RegistrationService, KeycloakAdminClient (service account `library-backend`; secret `KEYCLOAK_ADMIN_CLIENT_SECRET`, see docs/setup/keycloak-registration.md)
 ```
-Other: `backend/Dockerfile`, `docker-compose.yaml` (app only), `keycloak/docker-compose.yml`
-(Keycloak + Postgres), `k8s/`, `Jenkinsfile`, `archive/` (old files — ignore).
+Other: `backend/Dockerfile`, `frontend/Dockerfile` (the web image reads `API_BASE_URL`, `KEYCLOAK_URL`, ... at start-up, see `docs/setup/docker-hub.md`), `.github/workflows/docker-publish.yml` (publishes `simple-library-api` / `simple-library-web` to Docker Hub on merge to master and on `v*` tags; needs the secrets `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`), `docker-compose.yaml` (app only), `keycloak/docker-compose.yml`
+(Keycloak + Postgres), `k8s/`, `archive/` (old files — ignore).
 
 ## API
 | Method | Path | Result |
@@ -132,7 +132,6 @@ Docker in WSL (compose project `keycloak`, network `keycloak_default`).
 - Registering two books with the same new ISBN concurrently can bypass the title/author check (no DB constraint).
 - JWTs are not checked for audience/`azp`: any token from realm `library` is accepted.
 - `docker-compose.yaml` comment mentions `h2` but defaults to `dev`; `dev` has no datasource URL of its own.
-- `Jenkinsfile` builds with `-DskipTests`.
 
 ## Design notes
 - Controllers return response DTOs (`BookResponse`, `BorrowerResponse` records), never JPA entities.

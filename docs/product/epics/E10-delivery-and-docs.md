@@ -17,7 +17,7 @@
 - Assumptions register (from backlog) and database choice justification (H2 for dev/tests, PostgreSQL for shared environments: transactions, row locks, constraints).
 
 ### US-10.3 CI/CD & deployment hardening (OPS · M) · [SCRUM-60](https://tharangage.atlassian.net/browse/SCRUM-60)
-- `Jenkinsfile` runs tests (remove `-DskipTests`), or Jenkins is retired in favour of GitHub Actions. Decide and document.
+- Decided: Jenkins is retired in favour of GitHub Actions. The `Jenkinsfile` was removed; `.github/workflows/docker-publish.yml` runs the tests and publishes the images (see `docs/setup/docker-hub.md`).
 - k8s manifests for the frontend (Deployment, Service, Ingress, ConfigMap for runtime config). The backend gets OTel env vars and probes (`/actuator/health`).
 - Schema migrations with Flyway (replace `ddl-auto: update` outside H2), needed once Reservation and new columns land.
 
