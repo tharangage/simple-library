@@ -6,7 +6,7 @@ Source: [`simple-library-requirement-in-a-nutshell.md`](simple-library-requireme
 | # | Requirement | Current state | Gap → story |
 |---|---|---|---|
 | 1 | Register borrower / book, list books (REST) | Implemented (`/apis/v1/books`, `/apis/v1/borrowers`) | Book registration must become admin-only → US-01.3 |
-| 2 | Borrow / return a book by book id | Implemented; only the borrower can return | Returns are **admin-only** now → US-06.1 (changes an existing business rule) |
+| 2 | Borrow / return a book by book id | Implemented; returns are admin-only (US-06.1, US-06.2); paths are `/apis/v1/borrowed-books/{book-id}/borrowers/{borrower-id}` | Reservation hand-over on return waits for E05 |
 | 3 | ISBN rules, multiple copies per ISBN | Implemented (409 on title/author mismatch) | Concurrent first-registration race (known issue) → US-03.5 |
 | 4 | One borrower per book at a time | Implemented (pessimistic lock) | — |
 | 5 | Keycloak realm **`library`**, OIDC for backend + frontend | Realm `library` used; Swagger client only; realm not versioned | `library-web` client + realm export → US-01.1, US-07.2 |
