@@ -21,12 +21,12 @@ class RegistrationSizeLimitFilterTest {
 
     @Test
     void doFilter_smallRegistration_passesThrough() throws Exception {
-        assertThat(run("POST", "/apis/v1/registrations", 400).getStatus()).isEqualTo(200);
+        assertThat(run("POST", "/apis/v1/borrowers", 400).getStatus()).isEqualTo(200);
     }
 
     @Test
     void doFilter_oversizedRegistration_returns413() throws Exception {
-        assertThat(run("POST", "/apis/v1/registrations", 5000).getStatus()).isEqualTo(413);
+        assertThat(run("POST", "/apis/v1/borrowers", 5000).getStatus()).isEqualTo(413);
     }
 
     @Test

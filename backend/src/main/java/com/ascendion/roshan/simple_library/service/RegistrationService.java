@@ -1,6 +1,6 @@
 package com.ascendion.roshan.simple_library.service;
 
-import com.ascendion.roshan.simple_library.dto.RegistrationRequest;
+import com.ascendion.roshan.simple_library.dto.BorrowerCreateRequest;
 import com.ascendion.roshan.simple_library.entity.Borrower;
 import com.ascendion.roshan.simple_library.exception.EmailAlreadyRegisteredException;
 import com.ascendion.roshan.simple_library.repository.BorrowerRepository;
@@ -27,7 +27,7 @@ public class RegistrationService {
         this.borrowerRepository = borrowerRepository;
     }
 
-    public Borrower register(final RegistrationRequest request) {
+    public Borrower register(final BorrowerCreateRequest request) {
         final String email = request.email().trim().toLowerCase(Locale.ROOT);
         if (borrowerRepository.existsByEmailIgnoreCase(email)) {
             throw new EmailAlreadyRegisteredException();

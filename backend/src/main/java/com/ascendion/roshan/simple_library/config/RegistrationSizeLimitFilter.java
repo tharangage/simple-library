@@ -13,14 +13,14 @@ import java.io.IOException;
 /**
  * Basic abuse protection for the public registration endpoint: a real request is well under 1 KB,
  * so anything declaring more than 4 KB is refused with 413 before the body is read.
- * (Requests without Content-Length are still bounded by the field size limits in RegistrationRequest.)
+ * (Requests without Content-Length are still bounded by the field size limits in BorrowerCreateRequest.)
  * Rate limiting is not done here: do it at the ingress / reverse proxy.
  */
 @Component
 public class RegistrationSizeLimitFilter extends OncePerRequestFilter {
 
     static final long MAX_BYTES = 4096;
-    private static final String PATH = "/apis/v1/registrations";
+    private static final String PATH = "/apis/v1/borrowers";
 
     @Override
     protected boolean shouldNotFilter(final HttpServletRequest request) {

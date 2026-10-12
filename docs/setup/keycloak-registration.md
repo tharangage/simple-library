@@ -1,6 +1,6 @@
 # Keycloak setup for self-registration (E02)
 
-`POST /apis/v1/registrations` creates users through the Keycloak **Admin REST API**. The backend signs in
+`POST /apis/v1/borrowers` creates users through the Keycloak **Admin REST API**. The backend signs in
 as a service account, so Keycloak needs one more client. Do this once per Keycloak (the realm is not yet
 exported to the repo; see E01 for the full realm plan).
 
@@ -47,9 +47,9 @@ On Windows PowerShell `curl` is an alias for `Invoke-WebRequest`; use `curl.exe`
 
 ## Try it
 ```bash
-curl -i -X POST http://localhost:8081/apis/v1/registrations -H 'Content-Type: application/json' \
+curl -i -X POST http://localhost:8081/apis/v1/borrowers -H 'Content-Type: application/json' \
   -d '{"firstName":"Ann","lastName":"Lee","email":"ann@example.com","mobile":"+14155550100","password":"s3cret-pass"}'
-# 201 + Location: /apis/v1/me  (a second call with the same email gives 409 EMAIL_ALREADY_REGISTERED)
+# 201 + Location: /apis/v1/me + the new Borrower as JSON, no password  (a second call with the same email gives 409 EMAIL_ALREADY_REGISTERED)
 ```
 Then log in to the web app with that email and password.
 

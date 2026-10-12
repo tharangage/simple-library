@@ -18,7 +18,7 @@ describe('registerUser', () => {
     })
 
     const [url, options] = fetchMock.mock.calls[0]
-    expect(url.toString()).toBe('http://api.test/apis/v1/registrations')
+    expect(url.toString()).toBe('http://api.test/apis/v1/borrowers')
     expect(JSON.parse(options.body)).toEqual({
       firstName: 'Ann',
       lastName: 'Lee',

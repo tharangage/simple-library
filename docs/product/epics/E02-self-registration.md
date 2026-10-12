@@ -8,12 +8,12 @@
 
 ### US-02.1 Public registration API (BE · L) · [SCRUM-21](https://tharangage.atlassian.net/browse/SCRUM-21) – *done* (merged in PR #11)
 As a visitor, I want to register with my details, so that I can log in and borrow books.
-- `POST /apis/v1/registrations` takes `{firstName, lastName, email, mobile, password}` and needs no token.
+- `POST /apis/v1/borrowers` (first `/apis/v1/registrations`; the old admin-style borrower endpoint was removed) takes `{firstName, lastName, email, mobile, password}` and needs no token.
 - Validation → 400 with field errors: all fields required. Email format. Mobile matches E.164 `^\+[1-9]\d{7,14}$`. Password ≥ 8 characters.
 - Creates the Keycloak user (email as username, `emailVerified=false`, role `user`) through the Admin REST API using the `library-backend` service account. Then creates the Borrower with `keycloakUserId`.
 - Email already used in Keycloak or DB → 409 `EMAIL_ALREADY_REGISTERED`.
 - If saving the Borrower fails after Keycloak succeeded, the Keycloak user is deleted (compensation) and the call returns 500. Both paths are tested with a mocked Keycloak client.
-- Returns 201 with `Location: /apis/v1/me` and no password in the response. Password and mobile are never logged.
+- Returns 201 with `Location: /apis/v1/me` and a `BorrowerResponse` (`id`, `firstname`, `lastname`, `email`, `mobile`, dates) with no password. Password and mobile are never logged.
 - Basic abuse protection: request size limit, plus a note/ticket for rate limiting at the ingress.
 
 ### US-02.2 Mobile number on Borrower (BE · S) · [SCRUM-22](https://tharangage.atlassian.net/browse/SCRUM-22) – *done* (merged in PR #11)
@@ -48,5 +48,6 @@ Status: US-02.1–02.3 merged to `master` in [PR #11](https://github.com/tharang
 Keycloak setup: [`docs/setup/keycloak-registration.md`](../../setup/keycloak-registration.md).
 - `Borrower` also got a unique, nullable `keycloakUserId` (US-01.x will make it required for new rows).
 - A duplicate email that slips past the pre-check (race) is answered **409**, not 500; the Keycloak user is still deleted again.
+- Endpoint moved: registration is now `POST /apis/v1/borrowers` in `BorrowerController` (was `POST /apis/v1/registrations` in `RegistrationController`). The request record `RegistrationRequest` is now `BorrowerCreateRequest` (same fields) and the response is `BorrowerResponse` instead of `RegistrationResponse`, so JSON field names are `firstname` / `lastname` and `mobile` is included (it is the caller's own number). The old admin-style borrower endpoint and `BorrowerService` were removed. Breaking: web app and backend must be deployed together.
 - "Request size limit": requests declaring more than 4 KB get 413; field `@Size` limits bound the rest. Rate limiting: ingress.
 - The role `user` comes from the realm's default roles; the backend does not assign it (it only has `manage-users`, `view-users`).

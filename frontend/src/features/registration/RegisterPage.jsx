@@ -26,7 +26,7 @@ export function RegisterPage() {
   if (auth.isAuthenticated) return <Navigate to="/books" replace />
 
   if (registration.isSuccess) {
-    const firstName = registration.data?.firstName
+    const firstName = registration.data?.firstname
     return (
       <section className="auth-form auth-form--centered" aria-labelledby="registered-title">
         <div className="auth-success-icon" aria-hidden="true">

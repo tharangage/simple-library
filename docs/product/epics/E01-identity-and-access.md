@@ -29,7 +29,7 @@ As the library, I want each endpoint restricted to the right role, so that users
 
 | Endpoint | Access |
 |---|---|
-| `POST /apis/v1/registrations` | public (no token) |
+| `POST /apis/v1/borrowers` (self-registration) | public (no token) |
 | `GET /apis/v1/books` | `user`, `admin` |
 | `POST /apis/v1/books` | `admin` (done with US-03.4) |
 | `GET/POST/DELETE /apis/v1/me/**` (loans, reservations) | `user` |
@@ -55,7 +55,7 @@ As the backend, I want to reject tokens that weren't issued for this API, so tha
 ### US-01.6 Swagger UI login with roles (BE · S) · [SCRUM-20](https://tharangage.atlassian.net/browse/SCRUM-20)
 As an API user, I want to log in from Swagger UI's *Authorize* button with my library account, so that I can try every endpoint my role allows.
 - Swagger UI keeps client `library-swagger` and realm `library` (already working). Each operation shows its required role in the description.
-- `POST /apis/v1/registrations` is marked as needing no auth.
+- `POST /apis/v1/borrowers` (self-registration, was `/apis/v1/registrations`) is marked as needing no auth.
 
 ### US-01.7 Borrow on behalf of another borrower: admin only (BE · S) · [SCRUM-62](https://tharangage.atlassian.net/browse/SCRUM-62) – *implemented together with US-04.1*
 As the library, I want only admins to borrow on behalf of another borrower, so that a user cannot create loans under someone else's name.
