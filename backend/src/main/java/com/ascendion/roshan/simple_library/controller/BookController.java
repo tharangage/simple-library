@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -33,8 +34,10 @@ public class BookController {
     }
 
     @GetMapping
-    public Page<BookResponse> listBooks(@ParameterObject @PageableDefault(size = 5) final Pageable pageable) {
-        return bookService.listBooks(pageable).map(BookResponse::from);
+    public Page<BookResponse> listBooks(
+            @RequestParam(name = "q", required = false) final String query,
+            @ParameterObject @PageableDefault(size = 5) final Pageable pageable) {
+        return bookService.listBooks(query, pageable).map(BookResponse::from);
     }
 
 }

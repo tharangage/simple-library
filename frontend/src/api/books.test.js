@@ -15,6 +15,19 @@ describe('fetchBooks', () => {
   })
 })
 
+describe('fetchBooks with a search text', () => {
+  it('sends q along with the paging parameters', async () => {
+    vi.mocked(apiGet).mockResolvedValue({ content: [], number: 0, size: 5, totalElements: 0, totalPages: 0 })
+
+    await fetchBooks({ token: 't', page: 1, size: 5, sort: 'title,asc', q: 'dune' })
+
+    expect(apiGet).toHaveBeenCalledWith('/apis/v1/books', {
+      token: 't',
+      params: { page: 1, size: 5, sort: 'title,asc', q: 'dune' },
+    })
+  })
+})
+
 describe('createBook', () => {
   it('posts the book to the books endpoint with the token', async () => {
     vi.mocked(apiPost).mockResolvedValue({ id: 'bk-1' })

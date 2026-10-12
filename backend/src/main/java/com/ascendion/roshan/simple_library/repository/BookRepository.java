@@ -35,6 +35,18 @@ public interface BookRepository extends JpaRepository<Book, String> {
     Optional<Book> findByIdForUpdate(@Param("id") String id);
 
     /**
+     * Books whose title, author or ISBN contain the text. {@code pattern} is a lower-case LIKE pattern
+     * (see {@code SearchPattern}). Sort properties are those of {@code Book}, e.g. {@code title}, {@code author}.
+     */
+    @Query("""
+            select b from Book b
+            where lower(b.title) like :pattern escape '!'
+               or lower(b.author) like :pattern escape '!'
+               or lower(b.isbn) like :pattern escape '!'
+            """)
+    Page<Book> searchBooks(@Param("pattern") String pattern, Pageable pageable);
+
+    /**
      * Books that are out, with their borrower. {@code pattern} is a lower-case LIKE pattern (see BorrowedBookService.listBorrowedBooks).
      * Sort properties are those of {@code Book}, e.g. {@code borrowedDate}, {@code title}.
      */

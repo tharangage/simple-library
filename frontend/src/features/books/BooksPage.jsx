@@ -18,7 +18,7 @@ const SORTABLE_COLUMNS = { title: 'Title', author: 'Author', isbn: 'ISBN' }
 const DEFAULT_SORT = { field: 'title', direction: 'asc' }
 
 /**
- * Page and sort live in the URL (e.g. /books?page=2&sort=author,desc), not in component state.
+ * Page, sort and search text live in the URL (e.g. /books?q=dune&page=2&sort=author,desc), not in component state.
  * That way reload, the Back button and shared links all show the same page.
  */
 function readListParams(searchParams) {
@@ -28,18 +28,20 @@ function readListParams(searchParams) {
   return {
     page: Number.isInteger(page) && page > 0 ? page : 1,
     sort: validSort ? { field, direction } : DEFAULT_SORT,
+    q: searchParams.get('q') ?? '',
   }
 }
 
 export function BooksPage() {
   const auth = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { page, sort } = readListParams(searchParams)
+  const { page, sort, q } = readListParams(searchParams)
 
   const { data, isPending, isError, error, refetch, isFetching, isPlaceholderData } = useBooks({
     page: page - 1, // the URL is 1-based for people; Spring Data is 0-based
     size: PAGE_SIZE,
     sort: `${sort.field},${sort.direction}`,
+    q,
   })
 
   // The user's Borrower and item counts. Without a Borrower (admin only, or still loading) there are no Borrow buttons.
@@ -69,8 +71,22 @@ export function BooksPage() {
 
   const sortBy = (field) => {
     const direction = sort.field === field && sort.direction === 'asc' ? 'desc' : 'asc'
-    // A new sort order starts again from the first page.
-    setSearchParams({ sort: `${field},${direction}` })
+    // A new sort order starts again from the first page, and keeps the search text.
+    const next = new URLSearchParams(searchParams)
+    next.delete('page')
+    next.set('sort', `${field},${direction}`)
+    setSearchParams(next)
+  }
+
+  const search = (event) => {
+    event.preventDefault()
+    const text = new FormData(event.currentTarget).get('q').trim()
+    // A new search starts again from the first page and keeps the sort order.
+    const next = new URLSearchParams(searchParams)
+    next.delete('page')
+    if (text) next.set('q', text)
+    else next.delete('q')
+    setSearchParams(next)
   }
 
   return (
@@ -91,6 +107,30 @@ export function BooksPage() {
         )}
       </header>
 
+      {/* key: a new search from the URL (Back button) resets the box to match */}
+      <form role="search" className="search-form" onSubmit={search} key={q}>
+        <label htmlFor="book-search">Search by title, author or ISBN</label>
+        <div className="search-form__row">
+          <input id="book-search" name="q" type="search" defaultValue={q} />
+          <button type="submit" className="button--primary">
+            Search
+          </button>
+          {q && (
+            <button
+              type="button"
+              onClick={() => {
+                const next = new URLSearchParams(searchParams)
+                next.delete('page')
+                next.delete('q')
+                setSearchParams(next)
+              }}
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      </form>
+
       {isPending && (
         <p role="status" className="message">
           Loading books…
@@ -100,7 +140,9 @@ export function BooksPage() {
       {isError && <BooksError error={error} onRetry={() => refetch()} onLogin={() => auth.signinRedirect()} />}
 
       {data && data.totalElements === 0 && (
-        <p className="message">No books yet. Books appear here once the library registers them.</p>
+        <p className="message">
+          {q ? `No books match “${q}”.` : 'No books yet. Books appear here once the library registers them.'}
+        </p>
       )}
 
       {data && data.totalElements > 0 && data.items.length === 0 && (

@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Locale;
 
 @Service
 public class BorrowedBookService {
@@ -78,14 +77,7 @@ public class BorrowedBookService {
      */
     @Transactional(readOnly = true)
     public Page<BorrowedBookResponse> listBorrowedBooks(final String query, final Pageable pageable) {
-        final String text = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
-        return bookRepository.findBorrowedBooks(toLikePattern(text), pageable);
-    }
-
-    /** Wraps the text in % and escapes the LIKE wildcards in it (escape character !), so "50%" is searched as text. */
-    private static String toLikePattern(final String text) {
-        final String escaped = text.replace("!", "!!").replace("%", "!%").replace("_", "!_");
-        return "%" + escaped + "%";
+        return bookRepository.findBorrowedBooks(SearchPattern.contains(query), pageable);
     }
 
     @Transactional

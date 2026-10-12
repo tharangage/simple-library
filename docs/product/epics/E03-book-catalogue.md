@@ -20,10 +20,13 @@ As the web app, I want each book to come with its status relative to the caller,
 - Never exposes other borrowers' ids, names or emails (A-10, GDPR).
 - No N+1 queries: status is computed in one query, or two at most, per page (covered by a test).
 
-### US-03.3 Search and filter (BE + FE · M · nice-to-have) · [SCRUM-27](https://tharangage.atlassian.net/browse/SCRUM-27)
+### US-03.3 Search and filter (BE + FE · M · nice-to-have) · [SCRUM-27](https://tharangage.atlassian.net/browse/SCRUM-27) – *search done, "available only" filter open*
 As a user, I want to search by title, author or ISBN and filter to "available only", so that I can find a book quickly.
-- `GET /apis/v1/books?q=…&available=true`: case-insensitive *contains* on title/author, exact match on ISBN.
-- Search box is debounced (300 ms). The query is kept in the URL.
+- `GET /apis/v1/books?q=…` – **done**: case-insensitive *contains* on title, author **and** ISBN (the first draft said exact match on ISBN). `%` and `_` in `q` are searched as text. A blank `q` lists everything. Any valid token. Shared with `GET /apis/v1/borrowed-books?q=` through `SearchPattern`.
+- `GET /apis/v1/books?available=true` – **open**: only books that can be borrowed now.
+- Books page – **done**: a search box ("Search by title, author or ISBN") that submits on Enter or the Search button, so it is not debounced (a request per keystroke is avoided; the first draft said 300 ms). The text is kept in the URL with page and sort, e.g. `/books?q=dune&page=2&sort=author,asc`. A new search starts again from page 1 and keeps the sort order; paging and sorting keep the text. A *Clear* button appears while a search is active, and "No books match …" is shown for an empty result.
+- Books page "available only" toggle – **open**.
+- Tests: backend (service, repository incl. wildcard escaping and paging, end-to-end through the controller) and front end (box, URL, paging/sort interplay, empty result, Clear).
 
 ### US-03.4 Admin: register a book (FE · S) · [SCRUM-28](https://tharangage.atlassian.net/browse/SCRUM-28) – *implemented, see "Implementation notes" below*
 As an admin, I want to add a book copy from the web app, so that I don't need Swagger for daily work.
