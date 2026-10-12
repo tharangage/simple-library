@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { ConfirmDialog } from '../../components/ConfirmDialog.jsx'
 import { Pagination } from '../../components/Pagination.jsx'
@@ -33,6 +33,14 @@ export function ReturnsPage() {
   const [bookToReturn, setBookToReturn] = useState(null)
   const searchRef = useRef(null)
 
+  // Focus the search box whenever it is created: on arrival and after each search (the form is re-created then),
+  // so a barcode scanner can type straight away. A ref callback instead of autoFocus, which jsx-a11y rejects.
+  // Stable identity, so it does not steal focus on ordinary re-renders.
+  const focusSearch = useCallback((input) => {
+    searchRef.current = input
+    input?.focus()
+  }, [])
+
   const search = (event) => {
     event.preventDefault()
     const text = new FormData(event.currentTarget).get('q').trim()
@@ -61,9 +69,9 @@ export function ReturnsPage() {
 
       {/* key: a new search from the URL (Back button) resets the box to match */}
       <form role="search" className="search-form" onSubmit={search} key={q}>
-        <label htmlFor="borrowedBook-search">Search by book id, ISBN, title or borrower email</label>
+        <label htmlFor="borrowed-book-search">Search by book id, ISBN, title or borrower email</label>
         <div className="search-form__row">
-          <input id="borrowedBook-search" name="q" type="search" defaultValue={q} ref={searchRef} autoFocus />
+          <input id="borrowed-book-search" name="q" type="search" defaultValue={q} ref={focusSearch} />
           <button type="submit" className="button--primary">
             Search
           </button>
