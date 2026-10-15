@@ -92,3 +92,4 @@ web image falls back to the localhost defaults above.
 - This workflow is the only publisher; the old `Jenkinsfile` (with a placeholder push) was removed.
 - Images are tagged by commit (`sha-...`) so a deployment can pin an exact build; `latest` moves with `master`.
 - Never commit a Keycloak client secret (not even as a default value in a compose file); the project rule is that only local-only defaults go into the repository.
+- To run these images in a local Kubernetes cluster, see [kubernetes.md](kubernetes.md).

@@ -1,0 +1,108 @@
+# Keycloak in dev mode (embedded http, no production hardening). It imports the "library" realm on first
+# start from the ConfigMap "keycloak-realm" (created by the overlay). If the realm already exists in the
+# database, the import is skipped. KC_HOSTNAME (the public URL) is set by the overlay.
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+spec:
+  selector:
+    app: keycloak
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:16-alpine
+          command: ["sh", "-c", "until pg_isready -h postgres -U keycloak -d keycloak; do echo waiting for postgres; sleep 2; done"]
+      containers:
+        - name: keycloak
+          # Keep at or above the version that produced keycloak/realm-library.json (26.8.0).
+          image: quay.io/keycloak/keycloak:26.8.0
+          args: ["start-dev", "--import-realm"]
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: KC_DB
+              value: postgres
+            - name: KC_DB_URL
+              value: jdbc:postgresql://postgres:5432/keycloak
+            - name: KC_DB_USERNAME
+              value: keycloak
+            - name: KC_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: library-secrets
+                  key: POSTGRES_PASSWORD
+            - name: KC_BOOTSTRAP_ADMIN_USERNAME
+              value: admin
+            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: library-secrets
+                  key: KEYCLOAK_ADMIN_PASSWORD
+            # Filled into the realm file at import (placeholder ${LIBRARY_BACKEND_CLIENT_SECRET}).
+            - name: LIBRARY_BACKEND_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: library-secrets
+                  key: KEYCLOAK_ADMIN_CLIENT_SECRET
+            # Filled into the realm file at import (placeholder ${ENTRA_CLIENT_SECRET}). Optional: without it
+            # the realm still imports, but the Entra ID login needs its secret entered in the admin console.
+            - name: ENTRA_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: library-secrets
+                  key: ENTRA_CLIENT_SECRET
+                  optional: true
+            # TLS ends at the ingress controller.
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            - name: KC_PROXY_HEADERS
+              value: xforwarded
+          startupProbe:
+            httpGet:
+              path: /realms/library
+              port: http
+            periodSeconds: 5
+            failureThreshold: 80
+          readinessProbe:
+            httpGet:
+              path: /realms/library
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 200m
+              memory: 768Mi
+            limits:
+              memory: 1536Mi
+          volumeMounts:
+            - name: realm
+              mountPath: /opt/keycloak/data/import
+              readOnly: true
+      volumes:
+        - name: realm
+          configMap:
+            name: keycloak-realm

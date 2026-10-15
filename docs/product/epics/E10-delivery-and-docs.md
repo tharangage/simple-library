@@ -18,6 +18,7 @@
 
 ### US-10.3 CI/CD & deployment hardening (OPS · M) · [SCRUM-60](https://tharangage.atlassian.net/browse/SCRUM-60)
 - Decided: Jenkins is retired in favour of GitHub Actions. The `Jenkinsfile` was removed; `.github/workflows/docker-publish.yml` runs the tests and publishes the images (see `docs/setup/docker-hub.md`).
+- Done for local use: Kustomize manifests for postgres, keycloak, api and web with Traefik ingress and kind scripts in `k8s/` (see `docs/setup/kubernetes.md`, [ADR-002](../../decisions/ADR-002-local-kubernetes.md)). Open: a cloud overlay and automated deploys.
 - k8s manifests for the frontend (Deployment, Service, Ingress, ConfigMap for runtime config). The backend gets OTel env vars and probes (`/actuator/health`).
 - Schema migrations with Flyway (replace `ddl-auto: update` outside H2), needed once Reservation and new columns land.
 

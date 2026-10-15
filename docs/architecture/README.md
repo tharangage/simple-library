@@ -12,6 +12,7 @@ and rendered natively by GitHub. Edit them in place, or paste a block into
 | [Borrow a book](#4-borrow-a-book-sequence) | Transactional borrow with pessimistic lock |
 | [Data model](#5-data-model) | Entities and relationships |
 | [Deployment](#6-deployment-docker-compose) | Containers and ports (local Docker) |
+| [Kubernetes](#7-deployment-kubernetes-kind) | Cluster, ingress, namespace and service wiring (local kind) |
 
 ## 1. System context
 
@@ -188,4 +189,40 @@ flowchart LR
     keycloak --> pg
 ```
 
-> `k8s/` holds equivalent manifests for the app and PostgreSQL (`app-deployment`, `app-service`, `postgres-deployment`, `postgres-pvc`).
+## 7. Deployment (Kubernetes, kind)
+
+```mermaid
+flowchart LR
+    browser([Browser])
+    subgraph wsl["WSL Ubuntu (Docker)"]
+        subgraph kind["kind cluster: simple-library"]
+            traefik["Traefik ingress<br/>host ports 80 / 443"]
+            subgraph ns["namespace simple-library"]
+                web["web (nginx + React)"]
+                api["api (Spring Boot)"]
+                kc["keycloak<br/>realm: library"]
+                pg[("postgres<br/>StatefulSet + 1Gi volume")]
+            end
+        end
+    end
+    entra(["Microsoft Entra ID"])
+    saml(["samltest.dev (SAML)"])
+
+    browser -- "library.localhost" --> traefik
+    browser -- "api.localhost" --> traefik
+    browser -- "localhost" --> traefik
+    traefik --> web
+    traefik --> api
+    traefik --> kc
+    api -- "JWKS: keycloak:8080" --> kc
+    api -- "JDBC" --> pg
+    kc -- "JDBC" --> pg
+    kc -- "OIDC broker" --> entra
+    kc -- "SAML broker" --> saml
+```
+
+The three hostnames all resolve to the local machine. Keycloak is served at plain `http://localhost` because Entra ID
+accepts only `https://` or exactly `http://localhost` as redirect URI. The API validates the `iss` claim against the
+public Keycloak URL but fetches the keys from the in-cluster address. Guide: [`docs/setup/kubernetes.md`](../setup/kubernetes.md);
+decision: [ADR-002](../decisions/ADR-002-local-kubernetes.md); manifests and scripts: `k8s/` (`k8s/README.md`). The earlier
+plain manifests are in `archive/k8s-old/`.

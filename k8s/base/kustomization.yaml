@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Environment-independent parts. Hostnames, secrets and the realm file come from an overlay (overlays/local).
+resources:
+  - namespace.yaml
+  - postgres.yaml
+  - keycloak.yaml
+  - api.yaml
+  - web.yaml

@@ -1,0 +1,45 @@
+# Environment-specific settings merged into the base Deployments (env entries are merged by name).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+spec:
+  template:
+    spec:
+      containers:
+        - name: keycloak
+          env:
+            # Public URL: what the browser uses and what ends up in the token "iss" claim.
+            - name: KC_HOSTNAME
+              value: http://localhost
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+spec:
+  template:
+    spec:
+      containers:
+        - name: api
+          env:
+            # Must equal the "iss" claim of the tokens.
+            - name: APP_KEYCLOAK_PUBLIC_URL
+              value: http://localhost
+            - name: APP_CORS_ALLOWED_ORIGINS
+              value: http://library.localhost
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  template:
+    spec:
+      containers:
+        - name: web
+          env:
+            - name: API_BASE_URL
+              value: http://api.localhost
+            - name: KEYCLOAK_URL
+              value: http://localhost

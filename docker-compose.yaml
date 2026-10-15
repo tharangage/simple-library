@@ -26,7 +26,7 @@ services:
       # Inside the container Keycloak is reachable as "keycloak", not localhost. Set the secret in your shell or .env
       # (Keycloak -> Clients -> library-backend -> Credentials). There is no default.
       APP_KEYCLOAK_ADMIN_BASE_URL: http://keycloak:8080
-      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-}
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-fqwllvzHJzqoP8jnafG1oIPQBTitqwunm27Kg8irlKK54aQBELrJttUXzglNoKaJKQLqybadghh0nBjAGtXFBH}
 
     ports:
       # 8080 on the host is taken by Keycloak

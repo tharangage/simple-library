@@ -1,0 +1,55 @@
+# React app on nginx (image <DOCKERHUB_USER>/simple-library-web). The container writes /config.js at start
+# from these variables; API_BASE_URL and KEYCLOAK_URL (browser-facing URLs) are set by the overlay.
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  selector:
+    app: web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: web
+          image: ${DOCKERHUB_USER}/simple-library-web:${IMAGE_TAG}
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+          env:
+            - name: KEYCLOAK_REALM
+              value: library
+            - name: KEYCLOAK_CLIENT_ID
+              value: library-web
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
