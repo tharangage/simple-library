@@ -81,3 +81,5 @@ secure contexts"). In a cloud deployment the same is achieved with real HTTPS.
 
 See also [ADR-002](../decisions/ADR-002-local-kubernetes.md) and the
 [deployment diagram](../architecture/README.md#7-deployment-kubernetes-kind).
+
+For a public cloud cluster (OKE, GKE, AKS) with https and Let's Encrypt certificates, see [kubernetes-cloud.md](kubernetes-cloud.md).
