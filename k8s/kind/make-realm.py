@@ -13,6 +13,12 @@
           IdP sees. Whatever host the committed file has (e.g. http://localhost:8080) is replaced.
         - sets sslRequired to "none" (local cluster, plain http)
 
+  The addresses default to the local kind cluster. For another cluster (k8s/cloud/deploy.sh) set:
+      REALM_WEB_URL    address of the web app          (default http://library.localhost)
+      REALM_API_URL    address of the API / Swagger UI (default http://api.localhost)
+      REALM_AUTH_URL   address of Keycloak             (default http://localhost)
+      REALM_SSL_REQUIRED  sslRequired of the imported realm (default none; use external behind https)
+
   make-realm.py --export [--previous <committed-realm.json>] <raw-export.json> <realm-library.json>
       Export from the running cluster -> committed file (used by export-realm.sh):
         - removes the cluster URLs again, so the committed file stays free of local-only values
@@ -28,8 +34,8 @@ import os
 import sys
 from urllib.parse import urlsplit, urlunsplit
 
-WEB = "http://library.localhost"
-API = "http://api.localhost"
+WEB = os.environ.get("REALM_WEB_URL", "http://library.localhost").rstrip("/")
+API = os.environ.get("REALM_API_URL", "http://api.localhost").rstrip("/")
 ADD = {
     "library-web": {"redirectUris": [WEB + "/*", WEB], "webOrigins": [WEB]},
     "library-swagger": {"redirectUris": [API + "/swagger-ui/*"], "webOrigins": [API]},
@@ -39,8 +45,10 @@ MASKED = "**********"
 # Identity providers whose client secret is injected from an environment variable: alias -> placeholder.
 # An alias that is not in the realm file is simply skipped.
 IDP_SECRETS = {"entra-id": "${ENTRA_CLIENT_SECRET}"}
-# Address Keycloak is served at in the cluster (must match KC_HOSTNAME in overlays/local/env-local.yaml).
-CLUSTER_ORIGIN = "http://localhost"
+# Address Keycloak is served at in the cluster (must match KC_HOSTNAME in the overlay).
+CLUSTER_ORIGIN = os.environ.get("REALM_AUTH_URL", "http://localhost").rstrip("/")
+# sslRequired for the imported realm: "none" for plain http, "external" behind https.
+SSL_REQUIRED = os.environ.get("REALM_SSL_REQUIRED", "none")
 
 
 def load(path):
@@ -130,7 +138,7 @@ def to_cluster(realm):
         sys.exit("Client(s) not found in the realm file: " + ", ".join(sorted(missing)))
     idp_secrets(realm, True)
     saml_entity_id_to_cluster(realm)
-    realm["sslRequired"] = "none"
+    realm["sslRequired"] = SSL_REQUIRED
     return realm
 
 
