@@ -19,7 +19,8 @@ GitHub Actions builds and publishes two public images (workflow `.github/workflo
 
 Pull requests never publish. Before anything is pushed, the workflow runs the backend build with its tests
 (`./mvnw verify`) and the front-end lint, tests and build for the same commit. If one fails, nothing is published.
-Only `linux/amd64` is built; the comment in the workflow shows how to add `arm64`.
+Both images are built for `linux/amd64` and `linux/arm64` (one tag, Docker pulls the matching one). The API runtime image
+is `eclipse-temurin:17-jre` (Ubuntu), because the `-alpine` Temurin 17 tag exists for amd64 only.
 
 To release a version: `git tag v1.2.0 && git push origin v1.2.0` (from an up-to-date `master`).
 

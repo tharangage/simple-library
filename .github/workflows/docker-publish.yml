@@ -105,6 +105,9 @@ jobs:
             exit 1
           fi
 
+      # QEMU lets the amd64 runner run the few RUN steps of the arm64 image.
+      - uses: docker/setup-qemu-action@v3
+
       - uses: docker/setup-buildx-action@v3
 
       - uses: docker/login-action@v3
@@ -125,12 +128,13 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
 
-      # linux/amd64 only. To add Apple-silicon / ARM servers, add docker/setup-qemu-action and
-      # `platforms: linux/amd64,linux/arm64` (the backend build under emulation takes noticeably longer).
+      # Two platforms: amd64 (PCs, kind on Windows/WSL) and arm64 (Oracle Cloud A1 nodes, Apple silicon).
+      # Docker pulls the matching one automatically.
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

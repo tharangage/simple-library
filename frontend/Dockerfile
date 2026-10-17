@@ -1,5 +1,6 @@
-# Build stage
-FROM node:24-alpine AS build
+# Build stage. Runs on the CI machine's own CPU ($BUILDPLATFORM): the built files are static, so they are the same
+# for every CPU and the build does not run under emulation.
+FROM --platform=$BUILDPLATFORM node:24-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
