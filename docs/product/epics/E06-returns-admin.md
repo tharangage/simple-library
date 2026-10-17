@@ -7,6 +7,7 @@
 **Assumptions:** A-02 · **Note:** this replaces the current rule "only the borrower who has it can return it".
 
 ### US-06.1 Admin return API (BE · M) · [SCRUM-38](https://tharangage.atlassian.net/browse/SCRUM-38)
+**Status:** Done · Sprint 1
 As an admin, I want to mark a borrowed book as returned, so that it becomes available, or passes to the next reservation.
 - `DELETE /apis/v1/borrowed-books/{book-id}/borrowers/{borrower-id}` (role `admin`) → 200, empty body. Book not borrowed by that borrower → 409. Unknown book → 404. (Decision: the existing return call is kept and moved to the new path, instead of a new `DELETE .../{bookId}` that answers 204 with `BOOK_NOT_BORROWED`.)
 - Clears `borrowedBy` / `borrowedDate`. The hand-over to the next reservation (US-05.2) is **not** part of this story yet, because reservations (E05) do not exist.
@@ -14,12 +15,14 @@ As an admin, I want to mark a borrowed book as returned, so that it becomes avai
 - Users calling either endpoint → 403. Tests updated for the changed business rule.
 
 ### US-06.2 Returns page (FE · M) · [SCRUM-39](https://tharangage.atlassian.net/browse/SCRUM-39)
+**Status:** Done · Sprint 1
 As an admin, I want a returns screen at the desk, so that I can find the loan quickly and close it.
 - `/admin/returns`: search by book id, ISBN, title or borrower email. The list shows current loans.
 - *Mark returned* → confirmation dialog (title + borrower name) → success toast. (Once E05 exists: if a reservation was waiting, the toast also says "Now on hold for the next reservation".)
 - Works with a barcode scanner that types the book id and presses Enter (focus starts in the search box).
 
 ### US-06.3 Role-aware navigation and guards (FE · S) · [SCRUM-40](https://tharangage.atlassian.net/browse/SCRUM-40)
+**Status:** Done · Sprint 1
 As a user or admin, I want to see only the screens I may use.
 - Nav for `user`: Books, My books. Nav for `admin`: Books, Returns, Add book.
 - Opening an admin URL without the role shows a "You don't have access" page. The API still enforces roles, since UI hiding is not security.

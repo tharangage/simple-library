@@ -7,6 +7,7 @@
 **Decisions:** D-01 (stories below assume option **a**), D-11 ([ADR-001](../../decisions/ADR-001-borrower-provisioning.md), for US-02.4), assumptions A-01, A-08, A-12
 
 ### US-02.1 Public registration API (BE · L) · [SCRUM-21](https://tharangage.atlassian.net/browse/SCRUM-21) – *done* (merged in PR #11)
+**Status:** Done · Sprint 0
 As a visitor, I want to register with my details, so that I can log in and borrow books.
 - `POST /apis/v1/borrowers` (first `/apis/v1/registrations`; the old admin-style borrower endpoint was removed) takes `{firstName, lastName, email, mobile, password}` and needs no token.
 - Validation → 400 with field errors: all fields required. Email format. Mobile matches E.164 `^\+[1-9]\d{7,14}$`. Password ≥ 8 characters.
@@ -17,11 +18,13 @@ As a visitor, I want to register with my details, so that I can log in and borro
 - Basic abuse protection: request size limit, plus a note/ticket for rate limiting at the ingress.
 
 ### US-02.2 Mobile number on Borrower (BE · S) · [SCRUM-22](https://tharangage.atlassian.net/browse/SCRUM-22) – *done* (merged in PR #11)
+**Status:** Done · Sprint 0
 As the library, I want to store each borrower's mobile number, so that we can contact them later.
 - `Borrower.mobile` column (nullable for existing rows). Included in `BorrowerResponse` / `GET /me`, and never shown to other users.
 - H2 and PostgreSQL schema update via `ddl-auto: update` for now (migrations: see US-10.3).
 
 ### US-02.3 Registration page (FE · M) · [SCRUM-23](https://tharangage.atlassian.net/browse/SCRUM-23) – *done* (merged in PR #11)
+**Status:** Done · Sprint 0
 As a visitor, I want a sign-up form, so that I can create an account without contacting the library.
 - `/register` route, reachable from the landing page and the "not logged in" state.
 - Fields: first name, last name, email, mobile (with `+country code` hint), password, confirm password.
@@ -31,6 +34,7 @@ As a visitor, I want a sign-up form, so that I can create an account without con
 - Accessible: labels, error text linked with `aria-describedby`, keyboard-only flow works.
 
 ### US-02.4 Borrower created on first sign-in (console and brokered IdP users) (BE · S) · [SCRUM-24](https://tharangage.atlassian.net/browse/SCRUM-24) – *implemented*
+**Status:** Done · Sprint 0
 As a user whose Keycloak account was created in the Keycloak console or by a brokered identity provider, I want to be able to borrow without a separate registration step.
 Design: [ADR-001](../../decisions/ADR-001-borrower-provisioning.md).
 - On the first authenticated call that needs a Borrower (`me`, borrow, return), if none exists for the token's `sub`, one is created from the token claims `given_name`, `family_name`, `email`. Fallbacks: `preferred_username` for a missing name; a missing email is allowed. Mobile stays empty.

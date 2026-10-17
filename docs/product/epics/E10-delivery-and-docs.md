@@ -7,20 +7,24 @@
 **Decisions:** D-06, D-07
 
 ### US-10.1 Full local stack in compose (OPS · M) · [SCRUM-58](https://tharangage.atlassian.net/browse/SCRUM-58)
+**Status:** Proposed · backlog
 - One compose file (or `include`s) with Keycloak (realm `library` imported), PostgreSQL, backend, frontend and otel-lgtm on one network.
 - `docker compose up -d --build` gives you the app at http://localhost:5173, the API/Swagger at http://localhost:8081 and Keycloak at http://localhost:8080.
 - Fixes the known compose issues (`dev` profile without a datasource URL, misleading comments). The default profile is settled per D-06.
 
 ### US-10.2 User & API documentation (OPS · S) · [SCRUM-59](https://tharangage.atlassian.net/browse/SCRUM-59)
+**Status:** Proposed · backlog
 - `docs/api/`: how to get a token (Swagger / curl with PKCE), endpoint guide per role, error codes.
 - `docs/operations/run-locally.md` for WSL: ports, profiles, the `mvnw` CRLF fix.
 - Assumptions register (from backlog) and database choice justification (H2 for dev/tests, PostgreSQL for shared environments: transactions, row locks, constraints).
 
 ### US-10.3 CI/CD & deployment hardening (OPS · M) · [SCRUM-60](https://tharangage.atlassian.net/browse/SCRUM-60)
+**Status:** In progress · Sprint 1 · Left: review the Kubernetes manifests (`k8s/`) against the items above (frontend Ingress/ConfigMap, backend probes and OTel env vars); Flyway migrations.
 - Decided: Jenkins is retired in favour of GitHub Actions. The `Jenkinsfile` was removed; `.github/workflows/docker-publish.yml` runs the tests and publishes the images (see `docs/setup/docker-hub.md`).
 - Done for local use: Kustomize manifests for postgres, keycloak, api and web with Traefik ingress and kind scripts in `k8s/` (see `docs/setup/kubernetes.md`, [ADR-002](../../decisions/ADR-002-local-kubernetes.md)). Open: a cloud overlay and automated deploys.
 - k8s manifests for the frontend (Deployment, Service, Ingress, ConfigMap for runtime config). The backend gets OTel env vars and probes (`/actuator/health`).
 - Schema migrations with Flyway (replace `ddl-auto: update` outside H2), needed once Reservation and new columns land.
 
 ### US-10.4 Java 25 upgrade (BE · M · optional) · [SCRUM-61](https://tharangage.atlassian.net/browse/SCRUM-61)
+**Status:** Proposed · backlog
 - Only if D-07 = 25: update `pom.xml`, Dockerfile base image and CI. Check Lombok / SpotBugs / JaCoCo compatibility. Update `.claude/CLAUDE.md` hard rule.

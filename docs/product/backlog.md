@@ -17,7 +17,7 @@
 |---|---|---|---|---|---|
 | [E01](epics/E01-identity-and-access.md) | Identity & access (Keycloak realm `library`, roles) | IAM, BE | 9 | M1 | [SCRUM-5](https://tharangage.atlassian.net/browse/SCRUM-5) |
 | [E02](epics/E02-self-registration.md) | User self-registration | BE, FE, IAM | 4 | M2 | [SCRUM-6](https://tharangage.atlassian.net/browse/SCRUM-6) |
-| [E03](epics/E03-book-catalogue.md) | Book catalogue & availability | BE, FE | 5 | M2 | [SCRUM-7](https://tharangage.atlassian.net/browse/SCRUM-7) |
+| [E03](epics/E03-book-catalogue.md) | Book catalogue & availability | BE, FE | 6 | M2 | [SCRUM-7](https://tharangage.atlassian.net/browse/SCRUM-7) |
 | [E04](epics/E04-borrowing.md) | Borrowing (limit 3) & "My books" | BE, FE | 3 | M3 | [SCRUM-8](https://tharangage.atlassian.net/browse/SCRUM-8) |
 | [E05](epics/E05-reservations.md) | Reservations | BE, FE | 5 | M4 | [SCRUM-9](https://tharangage.atlassian.net/browse/SCRUM-9) |
 | [E06](epics/E06-returns-admin.md) | Returns at the library desk (admin) | BE, FE | 3 | M3 | [SCRUM-10](https://tharangage.atlassian.net/browse/SCRUM-10) |
@@ -25,6 +25,16 @@
 | [E08](epics/E08-api-contract-and-errors.md) | API contract & common error response | BE | 4 | M0 | [SCRUM-12](https://tharangage.atlassian.net/browse/SCRUM-12) |
 | [E09](epics/E09-observability-and-gdpr.md) | Observability (OpenTelemetry) & GDPR | OPS, BE | 5 | M5 | [SCRUM-13](https://tharangage.atlassian.net/browse/SCRUM-13) |
 | [E10](epics/E10-delivery-and-docs.md) | Delivery, environments & documentation | OPS | 4 | M5 | [SCRUM-14](https://tharangage.atlassian.net/browse/SCRUM-14) |
+
+## Sprints
+Jira is where status is tracked; each story in `epics/` has a **Status:** line that mirrors it (last synced 17 Oct 2026).
+
+| Sprint | Dates | Goal | State | Stories |
+|---|---|---|---|---|
+| Sprint 0 | 1 – 14 Oct (closed 17 Oct) | Keycloak integration · user registration incl. frontend · book borrow incl. frontend | Closed | Done: US-01.4, 01.6, 02.1–02.4, 04.1, 04.2, 07.2 · US-04.3 not finished, back in the backlog |
+| Sprint 1 | 15 – 28 Oct | Deployment to cloud | Active | Done: US-01.2, 01.7, 03.1, 03.3, 03.4, 06.1–06.3, 07.1, 07.6, 07.8 · In progress: US-01.1, 01.3, 07.3, 07.4, 07.7, 10.3 |
+
+Stories finished during Sprint 0 but never added to it (US-01.7, 03.1, 03.4, 06.1, 06.2) were recorded in Sprint 1, because Jira cannot add issues to a closed sprint.
 
 ## Milestones (suggested order)
 | Milestone | Goal | Stories |

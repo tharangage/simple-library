@@ -6,6 +6,7 @@
 **Decisions:** D-03, D-04, D-09, D-10
 
 ### US-07.1 Scaffold the app (FE · S) · [SCRUM-41](https://tharangage.atlassian.net/browse/SCRUM-41)
+**Status:** Done · Sprint 1
 As a developer, I want a working React + Vite project, so that feature work can start.
 - `frontend/` created with Vite (React, **JavaScript** template). Files use `.jsx`/`.js`; `jsconfig.json` only, no `tsconfig`, no `.ts(x)` files. A lint rule fails on TS files.
 - ESLint (react, react-hooks, jsx-a11y) + Prettier. npm scripts: `dev`, `build`, `preview`, `lint`, `test`.
@@ -13,6 +14,7 @@ As a developer, I want a working React + Vite project, so that feature work can 
 - Node LTS version pinned in `.nvmrc` and `package.json` `engines`. `README.md` explains running it in WSL (`npm run dev` → http://localhost:5173).
 
 ### US-07.2 Log in with Keycloak (FE · M) · [SCRUM-42](https://tharangage.atlassian.net/browse/SCRUM-42)
+**Status:** Done · Sprint 0
 As a user, I want to log in and out with my library account, so that the app knows who I am.
 - OIDC Authorization Code + PKCE against realm `library`, client `library-web` (library per D-03).
 - Tokens are kept in memory (not `localStorage`). Silent renew before expiry. On failure → redirect to login.
@@ -20,32 +22,38 @@ As a user, I want to log in and out with my library account, so that the app kno
 - Landing page for anonymous visitors with *Log in* and *Register*.
 
 ### US-07.3 API client & error handling (FE · M) · [SCRUM-43](https://tharangage.atlassian.net/browse/SCRUM-43)
+**Status:** In progress · Sprint 1 · Left: "no access" handling for 403 from the API; read `code`/field errors once US-08.1 lands; retry banner for network errors.
 As a developer, I want one API client, so that tokens, base URL and errors are handled in one place.
 - A `fetch` wrapper adds `Authorization: Bearer`, sets the base URL from runtime config, and parses the common error body (US-08.1) into `{status, code, message, fieldErrors}`.
 - 401 → re-authenticate. 403 → "no access" page. Network error → retry banner.
 - Server state via TanStack Query (D-09). Book list and "me" are invalidated after borrow, reserve, cancel and return.
 
 ### US-07.4 App shell, routing & guards (FE · S) · [SCRUM-44](https://tharangage.atlassian.net/browse/SCRUM-44)
+**Status:** In progress · Sprint 1 · Left: check the routes against the list above; `/my-books` waits for US-04.3.
 - React Router routes: `/`, `/register`, `/books`, `/my-books`, `/admin/returns`, `/admin/books/new`, plus a 404 page.
 - `RequireAuth` and `RequireRole` guards. Header with user name, "x of 3 used" and logout.
 - Global toast/notification and loading patterns.
 
 ### US-07.5 UI kit, styling & accessibility (FE · S) · [SCRUM-45](https://tharangage.atlassian.net/browse/SCRUM-45)
+**Status:** Proposed · backlog
 - Component library per D-10, with a small theme (colours, typography).
 - WCAG 2.1 AA basics: labels, focus states, colour contrast, keyboard navigation. axe check in component tests.
 - Layout works from 360 px width upward.
 
 ### US-07.6 Frontend tests (FE · M) · [SCRUM-46](https://tharangage.atlassian.net/browse/SCRUM-46)
+**Status:** Done · Sprint 1
 - Vitest + React Testing Library + MSW (mock API). Tests for the register form, books list states, borrow/reserve flows and role guards.
 - Coverage report. Threshold starts at 70% lines and rises over time.
 - Optional: Playwright smoke test (login → borrow) against the full compose stack.
 
 ### US-07.7 Container image & runtime config (OPS · S) · [SCRUM-47](https://tharangage.atlassian.net/browse/SCRUM-47)
+**Status:** In progress · Sprint 1 · Left: security headers in `nginx.conf` (CSP allowing the Keycloak and API origins, `X-Content-Type-Options`, `Referrer-Policy`).
 As ops, I want one image for every environment (12-factor), so that config is not baked in at build time.
 - Multi-stage Dockerfile: `node` build → `nginx` (unprivileged) serving `dist/`, with SPA fallback to `index.html`.
 - `config.js` is generated at container start from env vars (`API_BASE_URL`, `KEYCLOAK_URL`, `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT_ID`) and loaded before the app.
 - Security headers (CSP allowing Keycloak + API origins, `X-Content-Type-Options`, `Referrer-Policy`).
 
 ### US-07.8 Frontend CI (OPS · S) · [SCRUM-48](https://tharangage.atlassian.net/browse/SCRUM-48)
+**Status:** Done · Sprint 1
 - GitHub Actions workflow on PRs touching `frontend/**`: `npm ci`, lint, test with coverage, build, `npm audit --audit-level=high`, dependency review.
 - Builds the Docker image (push only on `main`).
