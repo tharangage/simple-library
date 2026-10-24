@@ -106,6 +106,12 @@ URLs must be added to `make-realm.py`.
 | Login redirects fail with "Invalid redirect URI" | The client in Keycloak lacks the cluster URL. Check `library-web` and `library-swagger` in the admin console. |
 | 404 page from Traefik | The Ingress is missing or the host name differs: `kubectl -n simple-library get ingress`. |
 
+## Cloud
+
+For a public cloud cluster (Oracle OKE, GKE, AKS) there is a second overlay, `overlays/cloud`, and the scripts in
+`k8s/cloud/` (cert-manager, Traefik with a cloud load balancer, Let's Encrypt). See
+[docs/setup/kubernetes-cloud.md](../docs/setup/kubernetes-cloud.md).
+
 ## Notes
 
 - Keycloak runs in `start-dev` mode, which is meant for development. A production setup would use `start` with HTTPS

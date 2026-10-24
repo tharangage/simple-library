@@ -1,0 +1,22 @@
+# Helm values for Traefik on a public cloud cluster (default: Oracle OKE).
+# Traefik's Service is of type LoadBalancer: the cloud creates a load balancer with a public IP for it.
+service:
+  type: LoadBalancer
+  annotations:
+    # OKE: use the flexible load balancer fixed at 10 Mbps. This is the one covered by Always Free;
+    # without these annotations OKE creates a fixed 100 Mbps load balancer, which is not free.
+    oci.oraclecloud.com/load-balancer-type: lb
+    service.beta.kubernetes.io/oci-load-balancer-shape: flexible
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-min: "10"
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-max: "10"
+    # GKE and AKS need no annotation for a plain public load balancer: delete the four lines above.
+additionalArguments:
+  # Send all plain-http traffic to https. The Let's Encrypt http challenge follows the redirect.
+  - --entryPoints.web.http.redirections.entryPoint.to=websecure
+  - --entryPoints.web.http.redirections.entryPoint.scheme=https
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 256Mi

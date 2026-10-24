@@ -1,0 +1,48 @@
+# One Ingress for the three public host names. cert-manager sees the annotation and the tls: section,
+# obtains one certificate for all three names (Let's Encrypt, HTTP-01) and stores it in the Secret
+# simple-library-tls, which Traefik then serves. Renewal is automatic.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: simple-library
+  annotations:
+    cert-manager.io/cluster-issuer: ${CERT_ISSUER}
+spec:
+  ingressClassName: traefik
+  tls:
+    - secretName: simple-library-tls
+      hosts:
+        - ${WEB_HOST}
+        - ${API_HOST}
+        - ${AUTH_HOST}
+  rules:
+    - host: ${WEB_HOST}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 80
+    - host: ${API_HOST}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 8080
+    - host: ${AUTH_HOST}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak
+                port:
+                  number: 8080

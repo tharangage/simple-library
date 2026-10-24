@@ -7,7 +7,7 @@
 | [`product/epics/`](product/epics/) | One file per epic with its stories and acceptance criteria |
 | [`decisions/`](decisions/) | Open decisions and Architecture Decision Records (ADRs) |
 | [`architecture/`](architecture/) | Mermaid architecture diagrams (context, layers, flows, data model, deployment) |
-| [`setup/`](setup/) | Environment setup: Keycloak clients and realm settings, Docker Hub images, running on Kubernetes (kind) |
+| [`setup/`](setup/) | Environment setup: Keycloak clients and realm settings, Docker Hub images, running on Kubernetes (kind and a public cloud cluster) |
 | [`design/`](design/) | UI designs in Figma: file links, frames, field mapping, open questions |
 
 Start with [`product/backlog.md`](product/backlog.md).
