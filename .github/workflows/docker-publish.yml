@@ -106,11 +106,11 @@ jobs:
           fi
 
       # QEMU lets the amd64 runner run the few RUN steps of the arm64 image.
-      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-qemu-action@v4
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -118,7 +118,7 @@ jobs:
       # Works out the tags and the OCI labels (source repository, commit, ...) from the branch or tag.
       - name: Image name, tags and labels
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/simple-library-${{ matrix.name }}
           flavor: latest=false
@@ -131,7 +131,7 @@ jobs:
       # Two platforms: amd64 (PCs, kind on Windows/WSL) and arm64 (Oracle Cloud A1 nodes, Apple silicon).
       # Docker pulls the matching one automatically.
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ${{ matrix.context }}
           platforms: linux/amd64,linux/arm64
